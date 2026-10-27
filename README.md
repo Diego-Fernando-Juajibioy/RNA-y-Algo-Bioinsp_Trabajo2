@@ -36,7 +36,7 @@ pip install -r requirements.txt
 python src/preparar_datos.py
 ```
 
-Lee `data/raw/loan.csv`, construye la variable objetivo `malo` (tabla del enunciado), dejar solo
+Lee `data/raw/loan.csv`, construye la variable objetivo `malo` (tabla del enunciado), deja solo
 las variables que se conocen el día de la solicitud y guarda:
 
 - `data/processed/creditos_pd.csv.gz`: lo que usan los modelos.
@@ -60,25 +60,53 @@ muestran las figuras están en `docs/03_hipotesis.md`.
 
 ```bash
 python src/pd_logistica.py
-python src/pd_logistica.py --set scorecard.pdo=40 --set logistica.C=0.1
+python src/pd_logistica.py --set scorecard.pdo=40
 ```
 
 Particiones temporales (entrenamiento sep-2012 a jun-2014, validación jul-dic 2014, prueba 2015),
-preprocesamiento común, regresión logística como modelo de referencia y su scorecard. Guarda el
-modelo en `models/pd_logistica.joblib`, las métricas en `reports/tablas/` y la Figura 5.
-Detalles en `docs/04_modelo_referencia.md`.
+preprocesamiento común, regresión logística como modelo de referencia (con búsqueda de C en
+validación) y su scorecard. Guarda el modelo en `models/pd_logistica.joblib`, las métricas en
+`reports/tablas/` y la Figura 5. Detalles en `docs/04_modelo_referencia.md`.
+
+## Paso 4: red neuronal para la PD
+
+```bash
+python src/pd_red.py --demo                 # prueba rápida, menos de 1 minuto
+python src/pd_red.py                        # experimento completo
+python src/pd_red.py --etapa busqueda       # solo la búsqueda de hiperparámetros
+python src/pd_red.py --etapa semillas       # solo las 30 semillas (usa la búsqueda guardada)
+python src/pd_red.py --set max_epocas=30 --set final.n_semillas=10
+```
+
+Perceptrón multicapa en PyTorch. Búsqueda aleatoria de 30 configuraciones (capas, neuronas,
+activación, dropout, L2, optimizador, tasa de aprendizaje, tamaño de lote) elegidas por AUC en
+validación, y luego 30 semillas de la mejor. Guarda `models/pd_red.joblib`, las tablas
+`busqueda_red.csv`, `semillas_red.csv`, `comparacion_pd.csv` y `costo_pd.csv`, y las Figuras 6 y 7.
+Parámetros en `config/pd_red.yaml`. La teoría y los resultados están en `docs/05_red_neuronal.md`.
+
+El experimento completo tarda unos 20 minutos en un portátil con 2 núcleos; por eso existe `--demo`.
+
+## Paso 5: interpretabilidad
+
+```bash
+python src/interpretabilidad.py
+```
+
+Importancia por permutación de cada variable para la logística y la red (Figura 8), y puntos del
+scorecard de la red con gradientes integrados agrupados por cada variable de las hipótesis
+(Figura 9). Necesita que existan los dos modelos de los pasos 3 y 4.
 
 ## Aplicación web
 
 ```bash
-python src/pd_logistica.py      # solo la primera vez, para crear models/pd_logistica.joblib
 streamlit run app/app.py
 ```
 
-Se abre en el navegador (http://localhost:8501). La persona ingresa sus datos y ve su puntaje,
-su probabilidad de incumplir, su percentil frente a los clientes de entrenamiento, cómo cambia el
-puntaje si cambia una característica y qué le suma o le resta. Los enlaces al reporte y al video
-se ponen en `config/app.yaml`.
+Usa el modelo indicado en `config/app.yaml` (por defecto la red, `pd_red.joblib`; se puede
+cambiar a `pd_logistica.joblib`). Se abre en el navegador (http://localhost:8501). La persona
+ingresa sus datos y ve su puntaje, su probabilidad de incumplir, su percentil frente a los
+clientes de entrenamiento, cómo cambia el puntaje si cambia una característica y qué le suma o
+le resta. Los enlaces al reporte y al video se ponen en `config/app.yaml`.
 
 ## Estructura
 
@@ -89,6 +117,7 @@ data/processed/    datos limpios que usan los modelos
 src/               código
 models/            modelos entrenados
 reports/figures/   figuras del reporte
+reports/tablas/    tablas con los resultados
 app/               aplicación web
 docs/              notas, uso de IA y cacería de alucinaciones
 ```

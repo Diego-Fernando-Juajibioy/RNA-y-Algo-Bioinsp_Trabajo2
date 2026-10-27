@@ -42,22 +42,31 @@ def percentil(paquete, s):
     return float(np.searchsorted(pob, s, side="right") / len(pob) * 100)
 
 
+def indices_por_variable(paquete):
+    nombres = paquete["nombres"]
+    return {v: [i for i, n in enumerate(nombres) if n == v or n.startswith(v + "_") or n == "nunca_" + v.replace("mths_since_", "")]
+            for v in paquete["entradas"]}
+
+
+def agrupar(paquete, aporte):
+    aporte = np.atleast_2d(aporte)
+    return pd.DataFrame({v: aporte[:, idx].sum(axis=1) for v, idx in indices_por_variable(paquete).items()})
+
+
 def contribuciones(paquete, fila):
     modelo = paquete["modelo"]
-    if not hasattr(modelo, "coef_"):
-        return None
     sc = paquete["scorecard"]
     factor = sc["pdo"] / np.log(2)
     prep = paquete["preprocesador"]
     x = prep.transform(pd.DataFrame([fila])[paquete["entradas"]])[0]
     x0 = prep.transform(pd.DataFrame([paquete["perfil"]])[paquete["entradas"]])[0]
-    aporte = -factor * modelo.coef_[0] * (x - x0)
-    nombres = paquete["nombres"]
-    por_variable = {}
-    for v in paquete["entradas"]:
-        idx = [i for i, n in enumerate(nombres) if n == v or n.startswith(v + "_") or n == "nunca_" + v.replace("mths_since_", "")]
-        por_variable[v] = float(aporte[idx].sum())
-    return pd.Series(por_variable).sort_values()
+    if hasattr(modelo, "coef_"):
+        aporte = -factor * modelo.coef_[0] * (x - x0)
+    elif hasattr(modelo, "gradientes_integrados"):
+        aporte = -factor * modelo.gradientes_integrados(x, x0)[0]
+    else:
+        return None
+    return agrupar(paquete, aporte).iloc[0].sort_values()
 
 
 def curva_que_pasa_si(paquete, fila, variable, valores):
