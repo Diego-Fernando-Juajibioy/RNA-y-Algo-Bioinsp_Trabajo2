@@ -1,0 +1,28 @@
+datos: data/processed/creditos_pd.csv.gz
+semilla: 2026
+
+fecha_inicio: "2012-09-01"
+particion:
+  entrenamiento: ["2012-09-01", "2014-06-30"]
+  validacion: ["2014-07-01", "2014-12-31"]
+  prueba: ["2015-01-01", "2015-12-31"]
+
+excluir: [application_type, sub_grade]
+log1p: [annual_inc, loan_amnt, installment, revol_bal, tot_cur_bal, total_rev_hi_lim, tot_coll_amt]
+recorte_percentiles: [1, 99]
+indicador_nunca: [mths_since_last_delinq, mths_since_last_record, mths_since_last_major_derog]
+min_frecuencia_categoria: 500
+
+logistica:
+  C: 1.0
+  max_iter: 2000
+
+scorecard:
+  puntaje_base: 600
+  odds_base: 20
+  pdo: 20
+
+salidas:
+  modelos: models
+  figuras: reports/figures
+  tablas: reports/tablas
