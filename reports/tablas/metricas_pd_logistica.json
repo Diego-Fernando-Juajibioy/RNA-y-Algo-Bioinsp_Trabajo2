@@ -1,0 +1,80 @@
+{
+  "particiones": {
+    "entrenamiento": {
+      "n": 135329,
+      "tasa_malos": 0.2248,
+      "desde": "2012-09-01",
+      "hasta": "2014-06-01"
+    },
+    "validacion": {
+      "n": 34988,
+      "tasa_malos": 0.2712,
+      "desde": "2014-07-01",
+      "hasta": "2014-12-01"
+    },
+    "prueba": {
+      "n": 30835,
+      "tasa_malos": 0.2546,
+      "desde": "2015-01-01",
+      "hasta": "2015-12-01"
+    }
+  },
+  "metricas": {
+    "entrenamiento": {
+      "AUC": 0.70444,
+      "Gini": 0.40887,
+      "KS": 0.29984,
+      "Brier": 0.15789,
+      "tasa_observada": 0.22482,
+      "prob_media": 0.22487
+    },
+    "validacion": {
+      "AUC": 0.71887,
+      "Gini": 0.43774,
+      "KS": 0.32234,
+      "Brier": 0.17574,
+      "tasa_observada": 0.27118,
+      "prob_media": 0.23651
+    },
+    "prueba": {
+      "AUC": 0.69986,
+      "Gini": 0.39972,
+      "KS": 0.29292,
+      "Brier": 0.17243,
+      "tasa_observada": 0.25461,
+      "prob_media": 0.24014
+    }
+  },
+  "parametros_entrenables": 107,
+  "segundos_entrenamiento": 9.39,
+  "configuraciones_probadas": 5,
+  "busqueda_C": [
+    {
+      "C": 0.001,
+      "AUC_validacion": 0.71857
+    },
+    {
+      "C": 0.01,
+      "AUC_validacion": 0.71887
+    },
+    {
+      "C": 0.1,
+      "AUC_validacion": 0.71881
+    },
+    {
+      "C": 1.0,
+      "AUC_validacion": 0.71887
+    },
+    {
+      "C": 10.0,
+      "AUC_validacion": 0.71887
+    }
+  ],
+  "C_elegido": 0.01,
+  "puntos_base": 550.22,
+  "scorecard": {
+    "puntaje_base": 600,
+    "odds_base": 20,
+    "pdo": 20
+  }
+}

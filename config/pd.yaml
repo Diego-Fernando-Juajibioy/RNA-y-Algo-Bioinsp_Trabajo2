@@ -14,7 +14,7 @@ indicador_nunca: [mths_since_last_delinq, mths_since_last_record, mths_since_las
 min_frecuencia_categoria: 500
 
 logistica:
-  C: 1.0
+  C_grid: [0.001, 0.01, 0.1, 1.0, 10.0]
   max_iter: 2000
 
 scorecard:

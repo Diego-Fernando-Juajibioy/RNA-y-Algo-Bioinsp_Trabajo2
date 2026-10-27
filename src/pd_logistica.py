@@ -41,12 +41,23 @@ def main():
     nombres = list(prep.get_feature_names_out())
     y_tr = partes["entrenamiento"]["malo"].values
 
+    X_va = prep.transform(partes["validacion"][entradas])
+    y_va = partes["validacion"]["malo"].values
     t0 = time.time()
-    modelo = LogisticRegression(C=cfg["logistica"]["C"], max_iter=cfg["logistica"]["max_iter"])
-    modelo.fit(X_tr, y_tr)
+    busqueda = []
+    mejor = None
+    for C in cfg["logistica"]["C_grid"]:
+        m = LogisticRegression(C=C, max_iter=cfg["logistica"]["max_iter"]).fit(X_tr, y_tr)
+        auc_va = evaluar(y_va, m.predict_proba(X_va)[:, 1])["AUC"]
+        busqueda.append({"C": C, "AUC_validacion": round(auc_va, 5)})
+        print(f"  C = {C:<7} AUC validación = {auc_va:.4f}")
+        if mejor is None or auc_va > mejor[0]:
+            mejor = (auc_va, C, m)
+    modelo = mejor[2]
     segundos = time.time() - t0
     n_param = modelo.coef_.size + modelo.intercept_.size
-    print(f"\nRegresión logística: {X_tr.shape[1]} entradas, {n_param} parámetros, {segundos:.1f} s")
+    print(f"\nRegresión logística: C = {mejor[1]}, {X_tr.shape[1]} entradas, {n_param} parámetros, "
+          f"{len(busqueda)} configuraciones, {segundos:.1f} s en total")
 
     resultados, probs = {}, {}
     for nombre, parte in partes.items():
@@ -81,7 +92,7 @@ def main():
                 sal["modelos"] / "pd_logistica.joblib")
     json.dump({"particiones": resumen_part, "metricas": tabla.round(5).to_dict(orient="index"),
                "parametros_entrenables": int(n_param), "segundos_entrenamiento": round(segundos, 2),
-               "configuraciones_probadas": 1, "puntos_base": round(float(base), 2), "scorecard": sc},
+               "configuraciones_probadas": len(busqueda), "busqueda_C": busqueda, "C_elegido": mejor[1], "puntos_base": round(float(base), 2), "scorecard": sc},
               open(sal["tablas"] / "metricas_pd_logistica.json", "w", encoding="utf-8"), indent=2, ensure_ascii=False)
 
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.6))

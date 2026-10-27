@@ -44,8 +44,10 @@ Resultado: 106 entradas.
 
 $$P(\text{malo}=1 \mid \mathbf x) = \sigma(\beta_0 + \boldsymbol\beta^\top \mathbf x), \qquad \sigma(z) = \frac{1}{1+e^{-z}}$$
 
-Con penalización L2 por defecto de scikit-learn (C = 1), ajustada **una sola vez** (1 configuración,
-~1,4 s, 107 parámetros).
+Con penalización L2. El único hiperparámetro es $C$ (inverso de la fuerza de la penalización); probamos
+$C \in \{0{,}001;\ 0{,}01;\ 0{,}1;\ 1;\ 10\}$ y elegimos el de mayor AUC en validación. Las cinco dan
+prácticamente lo mismo (AUC entre 0,7186 y 0,7189), así que con 135 mil créditos y 107 parámetros la
+penalización casi no importa. Quedó $C = 0{,}01$. En total: 5 configuraciones, ~9 s, 107 parámetros.
 
 | | AUC | Gini | KS | Brier |
 |---|---|---|---|---|
@@ -71,11 +73,11 @@ o en la línea de comandos, por ejemplo `python src/pd_logistica.py --set scorec
 Como en la logística $\ln\frac{1-p}{p} = -(\beta_0 + \sum_j \beta_j x_j)$, el puntaje se reparte en
 una parte fija más los puntos de cada variable:
 
-$$\text{Puntaje} = \underbrace{\text{Offset} - \text{Factor}\,\beta_0}_{\text{puntos base} \,=\, 527{,}3} \;+\; \sum_j \underbrace{\left(-\text{Factor}\,\beta_j x_j\right)}_{\text{puntos de la variable } j}$$
+$$\text{Puntaje} = \underbrace{\text{Offset} - \text{Factor}\,\beta_0}_{\text{puntos base} \,=\, 550{,}2} \;+\; \sum_j \underbrace{\left(-\text{Factor}\,\beta_j x_j\right)}_{\text{puntos de la variable } j}$$
 
 La tabla `reports/tablas/scorecard_logistica_puntos.csv` muestra, para cada variable, el rango de
-puntos que aporta. Las de mayor rango son ingreso anual, tasa de interés, número de cuentas
-abiertas, monto y DTI.
+puntos que aporta. Las de mayor rango son ingreso anual, tasa de interés, monto, número de
+cuentas abiertas y DTI.
 
 **Figura 5.** Izquierda: curva de calibración por deciles en validación y prueba. Derecha:
 distribución del puntaje en prueba para buenos y malos. Fuente: elaboración propia con datos de
