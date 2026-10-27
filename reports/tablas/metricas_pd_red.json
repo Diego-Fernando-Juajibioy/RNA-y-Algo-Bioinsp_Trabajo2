@@ -1,0 +1,71 @@
+{
+  "hp": {
+    "capas": [
+      256,
+      128,
+      64
+    ],
+    "activacion": "relu",
+    "dropout": 0.3,
+    "l2": 4.086334385215827e-05,
+    "optimizador": "adam",
+    "lr": 0.001353719116611946,
+    "batch": 1024
+  },
+  "parametros_entrenables": 68609,
+  "configuraciones_busqueda": 30,
+  "segundos_busqueda": 560.6,
+  "segundos_semillas": 645.4,
+  "n_semillas": 30,
+  "semilla_desplegada": 3042,
+  "resumen": {
+    "AUC_validacion": {
+      "media": 0.7242,
+      "desv": 0.00098,
+      "mejor": 0.72657,
+      "peor": 0.72276
+    },
+    "Gini_validacion": {
+      "media": 0.44839,
+      "desv": 0.00196,
+      "mejor": 0.45314,
+      "peor": 0.44551
+    },
+    "KS_validacion": {
+      "media": 0.33158,
+      "desv": 0.00252,
+      "mejor": 0.33643,
+      "peor": 0.32629
+    },
+    "Brier_validacion": {
+      "media": 0.1738,
+      "desv": 0.00024,
+      "mejor": 0.17332,
+      "peor": 0.17429
+    },
+    "AUC_prueba": {
+      "media": 0.70684,
+      "desv": 0.00164,
+      "mejor": 0.70985,
+      "peor": 0.70378
+    },
+    "Gini_prueba": {
+      "media": 0.41368,
+      "desv": 0.00328,
+      "mejor": 0.41971,
+      "peor": 0.40756
+    },
+    "KS_prueba": {
+      "media": 0.30371,
+      "desv": 0.00293,
+      "mejor": 0.30951,
+      "peor": 0.2978
+    },
+    "Brier_prueba": {
+      "media": 0.17132,
+      "desv": 0.00052,
+      "mejor": 0.17044,
+      "peor": 0.17268
+    }
+  }
+}

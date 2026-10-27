@@ -1,0 +1,17 @@
+conjunto,metrica,modelo,media,desv,mejor,peor
+validacion,AUC,Regresión logística,0.7189,0.0000,0.7189,0.7189
+validacion,AUC,Red neuronal,0.7242,0.0010,0.7266,0.7228
+validacion,Gini,Regresión logística,0.4377,0.0000,0.4377,0.4377
+validacion,Gini,Red neuronal,0.4484,0.0020,0.4531,0.4455
+validacion,KS,Regresión logística,0.3223,0.0000,0.3223,0.3223
+validacion,KS,Red neuronal,0.3316,0.0025,0.3364,0.3263
+validacion,Brier,Regresión logística,0.1757,0.0000,0.1757,0.1757
+validacion,Brier,Red neuronal,0.1738,0.0002,0.1733,0.1743
+prueba,AUC,Regresión logística,0.6999,0.0000,0.6999,0.6999
+prueba,AUC,Red neuronal,0.7068,0.0016,0.7099,0.7038
+prueba,Gini,Regresión logística,0.3997,0.0000,0.3997,0.3997
+prueba,Gini,Red neuronal,0.4137,0.0033,0.4197,0.4076
+prueba,KS,Regresión logística,0.2929,0.0000,0.2929,0.2929
+prueba,KS,Red neuronal,0.3037,0.0029,0.3095,0.2978
+prueba,Brier,Regresión logística,0.1724,0.0000,0.1724,0.1724
+prueba,Brier,Red neuronal,0.1713,0.0005,0.1704,0.1727

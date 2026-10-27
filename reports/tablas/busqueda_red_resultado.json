@@ -1,0 +1,17 @@
+{
+  "hp": {
+    "capas": [
+      256,
+      128,
+      64
+    ],
+    "activacion": "relu",
+    "dropout": 0.3,
+    "l2": 4.086334385215827e-05,
+    "optimizador": "adam",
+    "lr": 0.001353719116611946,
+    "batch": 1024
+  },
+  "configuraciones": 30,
+  "segundos": 560.6
+}
