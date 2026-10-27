@@ -1,0 +1,73 @@
+hipotesis,variable,grupo,puntos_medios,n
+H1,int_rate,5.3–10.0,16.00,844
+H1,int_rate,10.0–13,4.97,907
+H1,int_rate,13–15,0.78,725
+H1,int_rate,15–18,-3.56,784
+H1,int_rate,18–29,-8.80,740
+H1,grade,A,2.72,464
+H1,grade,B,0.00,851
+H1,grade,C,-4.16,1216
+H1,grade,D,-5.54,729
+H1,grade,E,-6.25,484
+H1,grade,F,-4.33,196
+H1,grade,G,-6.34,60
+H2,term,36 months,0.00,2775
+H2,term,60 months,-11.68,1225
+H3,dti,0.0–11,7.47,801
+H3,dti,11–16,2.37,799
+H3,dti,16–20,-0.78,802
+H3,dti,20–26,-3.64,798
+H3,dti,26–40,-6.36,800
+H4,annual_inc,6635–42 mil,-13.46,835
+H4,annual_inc,42 mil–56 mil,-4.71,784
+H4,annual_inc,56 mil–73 mil,0.10,781
+H4,annual_inc,73 mil–100 mil,4.57,868
+H4,annual_inc,100 mil–1900 mil,9.56,732
+H5,revol_util,0.0–27,7.77,801
+H5,revol_util,27–43,3.75,799
+H5,revol_util,43–58,1.16,802
+H5,revol_util,58–74,-0.90,802
+H5,revol_util,74–118,-2.86,795
+H6,inq_last_6mths,0,1.91,2156
+H6,inq_last_6mths,1,0.00,1181
+H6,inq_last_6mths,2,-1.38,412
+H6,inq_last_6mths,3,-2.06,164
+H6,inq_last_6mths,4+,-2.64,87
+H7,delinq_2yrs,0,0.00,3211
+H7,delinq_2yrs,1,-4.46,526
+H7,delinq_2yrs,2+,-7.86,263
+H7,pub_rec,0,0.00,3257
+H7,pub_rec,1,0.24,627
+H7,pub_rec,2+,0.54,116
+H8,home_ownership,MORTGAGE,0.00,1888
+H8,home_ownership,OWN,-0.24,468
+H8,home_ownership,RENT,-5.43,1644
+H9,purpose,small_business,-13.63,45
+H9,purpose,medical,-4.16,53
+H9,purpose,home_improvement,-2.99,245
+H9,purpose,other,-2.16,242
+H9,purpose,moving,-1.61,36
+H9,purpose,major_purchase,-0.49,89
+H9,purpose,house,-0.14,37
+H9,purpose,debt_consolidation,0.00,2482
+H9,purpose,credit_card,0.36,700
+H9,purpose,car,6.16,43
+H10,antiguedad_credito,3.2–10,-1.06,808
+H10,antiguedad_credito,10–13,-0.79,797
+H10,antiguedad_credito,13–16,0.09,795
+H10,antiguedad_credito,16–21,1.51,805
+H10,antiguedad_credito,21–65,4.56,795
+H11,emp_length,< 1 year,-2.49,309
+H11,emp_length,1 year,-1.02,262
+H11,emp_length,2 years,-1.19,361
+H11,emp_length,3 years,-0.38,301
+H11,emp_length,4 years,1.01,255
+H11,emp_length,5 years,-0.29,222
+H11,emp_length,6 years,-0.81,174
+H11,emp_length,7 years,-2.36,199
+H11,emp_length,8 years,-2.11,209
+H11,emp_length,9 years,-2.16,135
+H11,emp_length,10+ years,0.00,1390
+H12,verification_status,Not Verified,1.82,1046
+H12,verification_status,Source Verified,0.06,1687
+H12,verification_status,Verified,0.00,1267
