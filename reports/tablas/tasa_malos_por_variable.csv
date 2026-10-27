@@ -1,0 +1,92 @@
+variable,grupo,n,tasa
+anio_originacion,2007,603,0.2620
+anio_originacion,2008,2393,0.2073
+anio_originacion,2009,5281,0.1369
+anio_originacion,2010,12528,0.1404
+anio_originacion,2011,19729,0.1652
+anio_originacion,2012,49813,0.1673
+anio_originacion,2013,73194,0.2295
+anio_originacion,2014,74154,0.2622
+anio_originacion,2015,30835,0.2546
+grade,A,42933,0.0737
+grade,B,78621,0.1502
+grade,C,69648,0.2367
+grade,D,44399,0.3127
+grade,E,21775,0.3889
+grade,F,8754,0.4425
+grade,G,2400,0.4717
+term,36 months,206837,0.1812
+term,60 months,61693,0.3460
+home_ownership,MORTGAGE,131617,0.1956
+home_ownership,OTHER,228,0.2018
+home_ownership,OWN,23494,0.2297
+home_ownership,RENT,113191,0.2441
+verification_status,Not Verified,90695,0.1711
+verification_status,Source Verified,79488,0.2391
+verification_status,Verified,98347,0.2470
+emp_length,< 1 year,22461,0.2255
+emp_length,1 year,18076,0.2172
+emp_length,2 years,25050,0.2098
+emp_length,3 years,21684,0.2142
+emp_length,4 years,17140,0.2082
+emp_length,5 years,18993,0.2114
+emp_length,6 years,15571,0.2191
+emp_length,7 years,14849,0.2221
+emp_length,8 years,12582,0.2235
+emp_length,9 years,10153,0.2267
+emp_length,10+ years,81250,0.2115
+purpose,wedding,2019,0.1417
+purpose,car,3790,0.1427
+purpose,major_purchase,6609,0.1692
+purpose,home_improvement,15852,0.1923
+purpose,credit_card,52745,0.1938
+purpose,vacation,1674,0.2049
+purpose,house,1764,0.2069
+purpose,educational,422,0.2085
+purpose,debt_consolidation,157672,0.2290
+purpose,renewable_energy,279,0.2294
+purpose,medical,3052,0.2395
+purpose,other,15361,0.2420
+purpose,moving,2175,0.2487
+purpose,small_business,5116,0.3229
+int_rate,5.3–10.0,54817,0.0851
+int_rate,10.0–12.6,52616,0.1513
+int_rate,12.6–14.6,54028,0.2069
+int_rate,14.6–17.6,54330,0.2793
+int_rate,17.6–29.0,52739,0.3761
+dti,0.0–9.6,53713,0.1558
+dti,9.6–14.2,53703,0.1830
+dti,14.2–18.5,53757,0.2074
+dti,18.5–23.6,53743,0.2396
+dti,23.6–57.1,53614,0.3095
+annual_inc,1.896–40.971,53706,0.2725
+annual_inc,40.971–55.000,57865,0.2390
+annual_inc,55.000–70.000,51168,0.2212
+annual_inc,70.000–95.000,53611,0.1919
+annual_inc,95.000–8.706.582,52176,0.1677
+revol_util,0–32,53848,0.1530
+revol_util,32–49,53695,0.2005
+revol_util,49–63,53428,0.2261
+revol_util,63–78,53894,0.2457
+revol_util,78–892,53416,0.2701
+loan_amnt,500–6.250,53909,0.1814
+loan_amnt,6.250–10.000,63222,0.1977
+loan_amnt,10.000–14.400,44955,0.2184
+loan_amnt,14.400–20.000,56664,0.2375
+loan_amnt,20.000–35.000,49780,0.2664
+antiguedad_credito,0.5–9.7,53848,0.2330
+antiguedad_credito,9.7–12.6,54033,0.2251
+antiguedad_credito,12.6–15.5,53373,0.2197
+antiguedad_credito,15.5–20.1,53588,0.2099
+antiguedad_credito,20.1–66.1,53659,0.2075
+inq_last_6mths,0,130315,0.1990
+inq_last_6mths,1,76824,0.2268
+inq_last_6mths,2,36587,0.2419
+inq_last_6mths,3,16920,0.2618
+inq_last_6mths,4+,7855,0.2770
+delinq_2yrs,0,224433,0.2138
+delinq_2yrs,1,30293,0.2364
+delinq_2yrs,2+,13775,0.2672
+pub_rec,0,235119,0.2169
+pub_rec,1,29420,0.2304
+pub_rec,2+,3962,0.2607
