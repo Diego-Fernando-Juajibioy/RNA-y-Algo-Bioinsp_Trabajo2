@@ -1,0 +1,14 @@
+# entornos y cache
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+
+# el csv original de Kaggle pesa ~420 MB, no se sube (ver README)
+data/raw/*.csv
+data/raw/*.zip
+
+# cosas del sistema
+.DS_Store
+Thumbs.db
