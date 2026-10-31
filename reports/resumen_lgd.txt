@@ -1,0 +1,11 @@
+Créditos con desenlace: 268530
+Malos (malo = 1): 58819
+Castigados (Charged Off): 46009
+  con EAD observada <= 0: 0
+  con LGD < 0 antes de recortar (recuperaron más que la EAD): 38
+  sin fecha de último pago: 539
+Base para la LGD (originados desde 2012-09-01, último pago hasta 2014-12-31): 16253
+  LGD media 0.9037, mediana 0.8804, desviación 0.0927
+  LGD = 1 (nada recuperado): 31.5%
+  LGD < 0,5: 0.5%
+  EAD observada / monto desembolsado: 0.811

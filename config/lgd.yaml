@@ -1,0 +1,28 @@
+datos_pd: data/processed/creditos_pd.csv.gz
+datos_post: data/processed/creditos_post.csv.gz
+datos: data/processed/creditos_lgd.csv.gz
+estados_castigados: ["Charged Off", "Does not meet the credit policy. Status:Charged Off"]
+fecha_inicio: "2012-09-01"
+corte_recuperacion: "2014-12-31"
+semilla: 2026
+particion:
+  entrenamiento: ["2012-09-01", "2013-06-30"]
+  validacion: ["2013-07-01", "2013-12-31"]
+  prueba: ["2014-01-01", "2014-12-31"]
+excluir: [application_type, sub_grade]
+log1p: [annual_inc, loan_amnt, installment, revol_bal, tot_cur_bal, total_rev_hi_lim, tot_coll_amt]
+recorte_percentiles: [1, 99]
+indicador_nunca: [mths_since_last_delinq, mths_since_last_record, mths_since_last_major_derog]
+min_frecuencia_categoria: 100
+lineal:
+  alfa_grid: [0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+red:
+  perdida: bce
+  max_epocas: 200
+  paciencia: 15
+  busqueda: {n_configuraciones: 30, capas_ocultas: [1, 2, 3], neuronas: [16, 32, 64, 128, 256], activacion: [relu, tanh, leaky_relu], dropout: [0.0, 0.1, 0.2, 0.3, 0.5], l2: [1.0e-6, 1.0e-2], optimizador: [adam, sgd], lr_adam: [1.0e-4, 3.0e-3], lr_sgd: [1.0e-3, 5.0e-2], batch: [128, 256, 512]}
+  final: {n_semillas: 30, hp: null}
+  demo: {fraccion: 0.5, n_configuraciones: 3, n_semillas: 3, max_epocas: 15}
+perdida_esperada:
+  ead: loan_amnt
+salidas: {modelos: models, figuras: reports/figures, tablas: reports/tablas}
