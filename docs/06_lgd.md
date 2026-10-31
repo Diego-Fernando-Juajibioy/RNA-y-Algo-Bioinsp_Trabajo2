@@ -213,10 +213,11 @@ $$E[L] = PD \cdot LGD \cdot EAD$$
 (Comité de Supervisión Bancaria de Basilea, 2006).
 
 **EAD que usamos: el monto pedido (`loan_amnt`).** Es lo único que se conoce con seguridad el día de la
-solicitud, y es un límite superior: en el peor caso la persona no paga ninguna cuota. En la base de
-la LGD, al momento del castigo quedaba expuesto en promedio el 75 % de lo desembolsado (porque ya
-habían pagado parte del capital). Por eso dejamos la opción `--set perdida_esperada.ead=ajustada`, que
-multiplica el monto por ese 0,748 aprendido en el entrenamiento de la LGD.
+solicitud, y es un límite superior: en el peor caso la persona no paga ninguna cuota. Al momento del
+castigo quedaba expuesto en promedio el 74,8 % de lo desembolsado en el entrenamiento de la LGD
+(81,1 % en toda la base, porque los créditos más recientes incumplen más rápido y alcanzan a pagar
+menos capital). Por eso dejamos la opción `--set perdida_esperada.ead=ajustada`, que multiplica el
+monto por ese 0,748 del entrenamiento.
 
 Aplicamos los dos modelos al conjunto de **prueba de la PD** (créditos de 2015, 30 835) y comparamos
 con una pérdida "observada" aproximada: para los malos, capital no pagado menos recuperaciones netas;

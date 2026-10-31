@@ -125,6 +125,16 @@ ingresa sus datos y ve su puntaje, su probabilidad de incumplir, su percentil fr
 clientes de entrenamiento, cómo cambia el puntaje si cambia una característica y qué le suma o
 le resta. Los enlaces al reporte y al video se ponen en `config/app.yaml`.
 
+## Reporte (entrada de blog)
+
+El reporte está en `reporte/reporte.md` y se publica como `index.html` en GitHub Pages
+(Settings → Pages → Deploy from a branch → `main` / raíz). Para regenerarlo hace falta
+[pandoc](https://pandoc.org/installing.html):
+
+```bash
+pandoc reporte/reporte.md -s --toc --toc-depth=1 --mathjax=https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml-full.js -c reporte/estilo.css -o index.html
+```
+
 ## Estructura
 
 ```
@@ -137,4 +147,5 @@ reports/figures/   figuras del reporte
 reports/tablas/    tablas con los resultados
 app/               aplicación web
 docs/              notas, uso de IA y cacería de alucinaciones
+reporte/           fuente del reporte (index.html es la versión publicada)
 ```
