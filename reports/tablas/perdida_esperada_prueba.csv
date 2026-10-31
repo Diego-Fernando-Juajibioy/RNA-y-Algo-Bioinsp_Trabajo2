@@ -1,0 +1,4 @@
+combinacion,PD_media,LGD_media,EAD_total,perdida_esperada_total,tasa_perdida_esperada
+Red (PD) × Red (LGD),0.2605,0.9069,452036150.0000,114506002.2259,0.2533
+Logística (PD) × Lineal (LGD),0.2401,0.9085,452036150.0000,105281318.5718,0.2329
+Observado (aproximado),0.2546,,,110235579.3409,0.2439
