@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Lenny Alejandro Carvajal Taborda · Diego Fernando Juajibioy Chavez" />
+  <title>¿Me prestas? Redes neuronales para estimar el riesgo de crédito con datos de Lending Club</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <link rel="stylesheet" href="reporte/estilo.css" />
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script
+  src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml-full.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">¿Me prestas? Redes neuronales para estimar el riesgo
+de crédito con datos de Lending Club</h1>
+<p class="author">Lenny Alejandro Carvajal Taborda · Diego Fernando
+Juajibioy Chavez</p>
+<p class="date">Redes Neuronales y Algoritmos Bioinspirados ·
+Universidad Nacional de Colombia, sede Medellín · 2026-02</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#introducción" id="toc-introducción">1.
+Introducción</a></li>
+<li><a href="#datos" id="toc-datos">2. Datos</a></li>
+<li><a href="#caso-de-uso" id="toc-caso-de-uso">3. Caso de uso</a></li>
+<li><a href="#análisis-descriptivo-e-hipótesis"
+id="toc-análisis-descriptivo-e-hipótesis">4. Análisis descriptivo e
+hipótesis</a></li>
+<li><a href="#metodología-común" id="toc-metodología-común">5.
+Metodología común</a></li>
+<li><a href="#fundamentación-matemática"
+id="toc-fundamentación-matemática">6. Fundamentación matemática</a></li>
+<li><a href="#parte-1-probabilidad-de-incumplimiento"
+id="toc-parte-1-probabilidad-de-incumplimiento">7. Parte 1: probabilidad
+de incumplimiento</a></li>
+<li><a href="#parte-2-pérdida-dado-incumplimiento"
+id="toc-parte-2-pérdida-dado-incumplimiento">8. Parte 2: pérdida dado
+incumplimiento</a></li>
+<li><a href="#discusión" id="toc-discusión">9. Discusión</a></li>
+<li><a href="#aplicación-web" id="toc-aplicación-web">10. Aplicación
+web</a></li>
+<li><a href="#reproducibilidad" id="toc-reproducibilidad">11.
+Reproducibilidad</a></li>
+<li><a href="#uso-de-inteligencia-artificial"
+id="toc-uso-de-inteligencia-artificial">12. Uso de inteligencia
+artificial</a></li>
+<li><a href="#cacería-de-la-alucinación"
+id="toc-cacería-de-la-alucinación">13. Cacería de la
+alucinación</a></li>
+<li><a href="#referencias" id="toc-referencias">14. Referencias</a></li>
+</ul>
+</nav>
+<p><strong>Enlaces:</strong> <a
+href="https://github.com/Diego-Fernando-Juajibioy/RNA-y-Algo-Bioinsp_Trabajo2">Repositorio</a>
+· <a href="ENLACE-APP">Aplicación web</a> · <a href="ENLACE-VIDEO">Video
+promocional</a></p>
+<h1 id="introducción">1. Introducción</h1>
+<p>Antes de prestarle dinero a alguien, un banco se hace dos preguntas:
+¿qué tan probable es que no me pague? y, si no me paga, ¿cuánto voy a
+perder? La primera es la <strong>probabilidad de incumplimiento</strong>
+(PD) y es un problema de clasificación binaria. La segunda es la
+<strong>pérdida dado incumplimiento</strong> (LGD) y es un problema de
+regresión. Multiplicadas por la exposición (EAD) dan la pérdida esperada
+de cada crédito.</p>
+<p>En este trabajo respondemos las dos preguntas con perceptrones
+multicapa y los comparamos de forma justa contra modelos sencillos: una
+regresión logística para la PD y una regresión lineal para la LGD.
+Además convertimos el modelo de PD en una scorecard y en una aplicación
+web donde cualquier persona puede ver cómo la vería un banco.</p>
+<p>En resumen, lo que encontramos:</p>
+<ul>
+<li><strong>PD:</strong> la red neuronal le gana a la regresión
+logística en las 30 semillas (AUC en prueba 0,707 ± 0,002 frente a
+0,700), pero la mejora es pequeña y cuesta 640 veces más
+parámetros.</li>
+<li><strong>LGD:</strong> con la información de la solicitud, la LGD
+casi no se puede predecir. La regresión lineal le gana a la red en RMSE
+de prueba.</li>
+<li><strong>Pérdida esperada:</strong> combinando ambos modelos
+estimamos 25,2 % del monto prestado en los créditos de 2015, frente a
+24,4 % observado aproximadamente.</li>
+</ul>
+<h1 id="datos">2. Datos</h1>
+<p>Usamos el conjunto <em>Credit Risk Analysis</em> de Kaggle (Ranadeep,
+s. f.), con créditos de consumo de Lending Club, una plataforma
+estadounidense de préstamos entre personas. El archivo
+<code>loan.csv</code> tiene <strong>887 379 registros y 74
+variables</strong>, con créditos originados entre <strong>junio de 2007
+y diciembre de 2015</strong>. Lo descargamos el <strong>26 de octubre de
+2026</strong>. El significado de cada variable lo tomamos del
+diccionario incluido en el conjunto
+(<code>LCDataDictionary.xlsx</code>), no de lo que nos dijera una IA; la
+lista completa está en <code>docs/02_variables.md</code>.</p>
+<p>La variable objetivo <code>malo</code> se construyó a partir de
+<code>loan_status</code> con la codificación del enunciado (Tabla 1).
+Los créditos sin desenlace conocido se excluyen.</p>
+<p><strong>Tabla 1.</strong> Codificación de <code>loan_status</code> y
+número de créditos en el archivo original.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Categoría</th>
+<th>Créditos</th>
+<th><code>malo</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Fully Paid</td>
+<td>207 723</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>Does not meet the credit policy. Status:Fully Paid</td>
+<td>1 988</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td>Charged Off</td>
+<td>45 248</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Late (31-120 days)</td>
+<td>11 591</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>Default</td>
+<td>1 219</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td>Does not meet the credit policy. Status:Charged Off</td>
+<td>761</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td>Current</td>
+<td>601 779</td>
+<td>excluido</td>
+</tr>
+<tr class="even">
+<td>Issued</td>
+<td>8 460</td>
+<td>excluido</td>
+</tr>
+<tr class="odd">
+<td>In Grace Period</td>
+<td>6 253</td>
+<td>excluido</td>
+</tr>
+<tr class="even">
+<td>Late (16-30 days)</td>
+<td>2 357</td>
+<td>excluido</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p>Quedan <strong>268 530 créditos con desenlace: 58 819 malos (21,9 %)
+y 209 711 buenos</strong>. De las 74 variables usamos <strong>31 como
+entradas</strong> (21 numéricas, contando la antigüedad de la historia
+crediticia que calculamos, y 10 categóricas) y guardamos aparte 13
+variables posteriores al desembolso, que solo sirven para construir la
+LGD.</p>
+<h1 id="caso-de-uso">3. Caso de uso</h1>
+<p>El modelo lo usa el analista de crédito, o el sistema automático de
+aprobación, de una entidad que presta a personas naturales. Lo usa para
+<strong>decidir si aprueba una solicitud de crédito de consumo</strong>
+y estimar cuánto podría perder. Lo usa <strong>el día de la solicitud,
+antes de desembolsar el dinero</strong>.</p>
+<p>Esa última frase define todo lo demás: solo podemos usar lo que se
+sabe ese día. Eso incluye lo que declara la persona (ingreso, antigüedad
+laboral, vivienda, propósito, monto), su historia en el buró (deudas,
+cuentas, consultas, moras pasadas) y las condiciones que ofrece el banco
+(plazo, tasa, grado). Todo lo que pasa después de prestar (pagos, saldo
+pendiente, recuperaciones, fecha del último pago) queda por fuera de las
+entradas, porque usarlo sería <strong>fuga de información</strong>: el
+modelo se vería muy bueno en las pruebas y no serviría en la vida
+real.</p>
+<p>Una aclaración importante: la tasa de interés y el grado sí se
+conocen el día de la solicitud, pero los asigna Lending Club con su
+propio modelo de riesgo. Los dejamos porque el caso de uso los permite,
+pero hay que tener en cuenta que en buena parte resumen la evaluación
+que ya hizo Lending Club.</p>
+<h1 id="análisis-descriptivo-e-hipótesis">4. Análisis descriptivo e
+hipótesis</h1>
+<p>Antes de modelar planteamos 12 hipótesis sobre qué hace más riesgosa
+a una persona y miramos la tasa de malos según cada variable por
+separado (Figuras 1 a 3).</p>
+<figure>
+<img src="reports/figures/fig01_tasa_por_anio.png"
+alt="Figura 1. Créditos con desenlace y tasa de malos por año de originación. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 1.</strong> Créditos con
+desenlace y tasa de malos por año de originación. Fuente: elaboración
+propia con datos de Lending Club (Kaggle).</figcaption>
+</figure>
+<figure>
+<img src="reports/figures/fig02_tasa_categoricas.png"
+alt="Figura 2. Tasa de malos por categoría. La línea punteada es la tasa global. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 2.</strong> Tasa de malos
+por categoría. La línea punteada es la tasa global. Fuente: elaboración
+propia con datos de Lending Club (Kaggle).</figcaption>
+</figure>
+<figure>
+<img src="reports/figures/fig03_tasa_numericas.png"
+alt="Figura 3. Tasa de malos por quintil (o por conteo) de las variables numéricas. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 3.</strong> Tasa de malos
+por quintil (o por conteo) de las variables numéricas. Fuente:
+elaboración propia con datos de Lending Club (Kaggle).</figcaption>
+</figure>
+<p>Tres cosas nos llamaron la atención:</p>
+<ol type="1">
+<li><strong>La tasa de malos cambia mucho con el año</strong> (Figura
+1): baja de 26 % en 2007 a 14 % en 2009–2010 y vuelve a subir a 26 % en
+2014–2015. Lo de 2014–2015 es, creemos, <strong>sesgo de
+selección</strong>: al quitar los créditos que siguen activos, de esos
+años solo quedan los que ya terminaron, y en poco tiempo terminan sobre
+todo los que incumplieron rápido.</li>
+<li><strong>Las variables de buró no existen antes de septiembre de
+2012</strong> (Figura 4). En agosto de 2012 todavía faltaban en el 83 %
+de los créditos y en septiembre ya solo en el 1 %. Por eso trabajamos
+solo con créditos originados desde septiembre de 2012; si no, el modelo
+aprendería que “dato faltante” significa “crédito viejo”.</li>
+<li><strong>Los ingresos verificados tienen más malos</strong> (25 %
+frente a 17 %, Figura 2), al revés de lo que esperábamos.</li>
+</ol>
+<figure>
+<img src="reports/figures/fig04_faltantes_por_anio.png"
+alt="Figura 4. Porcentaje de faltantes por año de originación. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 4.</strong> Porcentaje de
+faltantes por año de originación. Fuente: elaboración propia con datos
+de Lending Club (Kaggle).</figcaption>
+</figure>
+<p>Las hipótesis y su evidencia descriptiva están en la Tabla 7 (sección
+7.4), junto con lo que dijo el modelo al final.</p>
+<h1 id="metodología-común">5. Metodología común</h1>
+<h2 id="particiones">5.1 Particiones</h2>
+<p>Todas las particiones son <strong>temporales</strong>, por fecha de
+originación (Tabla 2): el banco entrena con créditos del pasado y usa el
+modelo con solicitudes futuras, y una partición aleatoria mezclaría
+meses y daría una evaluación más optimista. La validación se usa para
+elegir hiperparámetros y la prueba se mira una sola vez, al final.</p>
+<p><strong>Tabla 2.</strong> Particiones de cada tarea.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Tarea</th>
+<th>Conjunto</th>
+<th>Créditos originados</th>
+<th>n</th>
+<th>Tasa de malos / LGD media</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PD</td>
+<td>Entrenamiento</td>
+<td>sep-2012 a jun-2014</td>
+<td>135 329</td>
+<td>22,5 %</td>
+</tr>
+<tr class="even">
+<td>PD</td>
+<td>Validación</td>
+<td>jul-2014 a dic-2014</td>
+<td>34 988</td>
+<td>27,1 %</td>
+</tr>
+<tr class="odd">
+<td>PD</td>
+<td>Prueba</td>
+<td>ene-2015 a dic-2015</td>
+<td>30 835</td>
+<td>25,5 %</td>
+</tr>
+<tr class="even">
+<td>LGD</td>
+<td>Entrenamiento</td>
+<td>sep-2012 a jun-2013</td>
+<td>7 698</td>
+<td>0,903</td>
+</tr>
+<tr class="odd">
+<td>LGD</td>
+<td>Validación</td>
+<td>jul-2013 a dic-2013</td>
+<td>4 781</td>
+<td>0,901</td>
+</tr>
+<tr class="even">
+<td>LGD</td>
+<td>Prueba</td>
+<td>ene-2014 a dic-2014</td>
+<td>3 774</td>
+<td>0,910</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p>En la PD, validación y prueba tienen más malos que el entrenamiento
+por el sesgo de selección de la sección 4. Esto afecta la calibración y
+lo comentamos en los resultados.</p>
+<h2 id="preprocesamiento">5.2 Preprocesamiento</h2>
+<p>Es el mismo para todos los modelos de una tarea y se ajusta
+<strong>solo con el entrenamiento</strong>
+(<code>src/comun.py</code>):</p>
+<ol type="1">
+<li>Numéricas: imputación con la mediana; <span
+class="math inline">\(\log(1+x)\)</span> a las variables de dinero, que
+son muy sesgadas; recorte en los percentiles 1 y 99; estandarización a
+media 0 y desviación 1.</li>
+<li>Para <code>mths_since_last_delinq</code>,
+<code>mths_since_last_record</code> y
+<code>mths_since_last_major_derog</code> se agrega un indicador
+<code>nunca_…</code> igual a 1 si el valor falta. El 55 % de faltantes
+de <code>mths_since_last_delinq</code> no parece un dato perdido sino
+una persona que nunca ha estado en mora, así que imputar con la mediana
+sin el indicador borraría esa información.</li>
+<li>Categóricas: <em>one-hot</em>; las categorías con menos de 500
+créditos (100 en la LGD, que tiene menos datos) se agrupan en
+“infrecuente”.</li>
+<li>Se quitan <code>application_type</code> (solo 3 créditos conjuntos
+con desenlace) y <code>sub_grade</code> (repite lo que dicen
+<code>grade</code> e <code>int_rate</code>).</li>
+</ol>
+<p>Quedan 29 variables originales, que se convierten en 106 entradas en
+la PD y 85 en la LGD.</p>
+<h2 id="regla-de-comparación-justa">5.3 Regla de comparación justa</h2>
+<p>Para cada familia de modelos reportamos cuántas configuraciones se
+entrenaron, el tiempo de cómputo total y el número de parámetros. La
+configuración final de cada red se entrena con 30 semillas y reportamos
+media, desviación estándar, mejor y peor valor. Todas las semillas están
+fijas en los archivos de <code>config/</code>.</p>
+<h1 id="fundamentación-matemática">6. Fundamentación matemática</h1>
+<h2 id="neurona-artificial-y-perceptrón-multicapa">6.1 Neurona
+artificial y perceptrón multicapa</h2>
+<p>Una neurona recibe un vector <span class="math inline">\(\mathbf
+x\)</span>, calcula una combinación lineal y le aplica una función de
+activación <span class="math inline">\(g\)</span>:</p>
+<p><span class="math display">\[a = g(\mathbf w^\top \mathbf x +
+b).\]</span></p>
+<p>Un perceptrón multicapa (MLP) apila <span
+class="math inline">\(L\)</span> capas de neuronas. Con <span
+class="math inline">\(\mathbf h^{(0)} = \mathbf x\)</span>,</p>
+<p><span class="math display">\[\mathbf h^{(l)} = g\left(W^{(l)}\mathbf
+h^{(l-1)} + \mathbf b^{(l)}\right), \qquad l = 1, \dots, L,\]</span></p>
+<p>y la salida es una sola neurona: <span class="math inline">\(z =
+\mathbf w^{(L+1)\top}\mathbf h^{(L)} + b^{(L+1)}\)</span> y <span
+class="math inline">\(\hat\mu = \sigma(z) = 1/(1+e^{-z})\)</span>. En
+las dos tareas usamos la sigmoide en la salida, porque tanto la PD como
+la LGD están entre 0 y 1. Si se quitan las capas ocultas queda <span
+class="math inline">\(\hat\mu = \sigma(\mathbf w^\top\mathbf x +
+b)\)</span>, que es la regresión logística: la red es una logística que
+construye sus propias variables <span class="math inline">\(\mathbf
+h^{(L)}\)</span>.</p>
+<p>Las activaciones ocultas que probamos están en la Tabla 3. Sin una
+activación no lineal, la red completa sería una función lineal y no
+ganaría nada frente a la logística.</p>
+<p><strong>Tabla 3.</strong> Funciones de activación utilizadas.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Activación</th>
+<th><span class="math inline">\(g(u)\)</span></th>
+<th><span class="math inline">\(g&#39;(u)\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>ReLU</td>
+<td><span class="math inline">\(\max(0, u)\)</span></td>
+<td><span class="math inline">\(1\)</span> si <span
+class="math inline">\(u &gt; 0\)</span>; <span
+class="math inline">\(0\)</span> si no</td>
+</tr>
+<tr class="even">
+<td>Leaky ReLU</td>
+<td><span class="math inline">\(\max(0{,}01u,\ u)\)</span></td>
+<td><span class="math inline">\(1\)</span> si <span
+class="math inline">\(u &gt; 0\)</span>; <span
+class="math inline">\(0{,}01\)</span> si no</td>
+</tr>
+<tr class="odd">
+<td>tanh</td>
+<td><span class="math inline">\(\tanh(u)\)</span></td>
+<td><span class="math inline">\(1 - \tanh^2(u)\)</span></td>
+</tr>
+<tr class="even">
+<td>sigmoide (salida)</td>
+<td><span class="math inline">\(\sigma(u) = 1/(1+e^{-u})\)</span></td>
+<td><span class="math inline">\(\sigma(u)(1-\sigma(u))\)</span></td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia.</em></p>
+<h2 id="funciones-de-pérdida-desde-máxima-verosimilitud">6.2 Funciones
+de pérdida desde máxima verosimilitud</h2>
+<p><strong>PD: entropía cruzada binaria.</strong> Suponemos <span
+class="math inline">\(y_i \mid \mathbf x_i \sim
+\text{Bernoulli}(\hat\mu_i)\)</span>. La verosimilitud de la muestra es
+<span class="math inline">\(\mathcal L(\theta) = \prod_i
+\hat\mu_i^{\,y_i}(1-\hat\mu_i)^{1-y_i}\)</span>, y maximizarla equivale
+a minimizar menos el logaritmo promedio:</p>
+<p><span class="math display">\[J(\theta) =
+-\frac1n\sum_{i=1}^n\Big[y_i\ln\hat\mu_i +
+(1-y_i)\ln(1-\hat\mu_i)\Big].\]</span></p>
+<p>Con salida sigmoide, <span class="math inline">\(\partial
+J_i/\partial z_i = \hat\mu_i - y_i\)</span>.</p>
+<p><strong>LGD: cuasi-verosimilitud de Bernoulli.</strong> La LGD es una
+proporción en <span class="math inline">\([0,1]\)</span> con 31,5 % de
+valores exactamente iguales a 1. Papke y Wooldridge (1996) proponen usar
+la misma expresión de <span class="math inline">\(J(\theta)\)</span>
+aunque <span class="math inline">\(y_i\)</span> no sea 0 o 1. Funciona
+porque</p>
+<p><span class="math display">\[\frac{\partial
+\ell_i}{\partial\hat\mu_i} = \frac{y_i -
+\hat\mu_i}{\hat\mu_i(1-\hat\mu_i)},\]</span></p>
+<p>cuyo valor esperado dado <span class="math inline">\(\mathbf
+x\)</span> es cero exactamente cuando <span
+class="math inline">\(\hat\mu = E[y\mid\mathbf x]\)</span>: el estimador
+apunta a la media condicional de la LGD, que es lo que necesita la
+pérdida esperada, sin suponer una distribución para <span
+class="math inline">\(y\)</span>.</p>
+<p><strong>La alternativa, error cuadrático (MSE).</strong> Sale de
+suponer <span class="math inline">\(y_i \sim \mathcal N(\mu_i,
+\sigma^2)\)</span>:</p>
+<p><span class="math display">\[-\ln\mathcal L = \frac
+n2\ln(2\pi\sigma^2) + \frac{1}{2\sigma^2}\sum_{i=1}^n
+(y_i-\mu_i)^2,\]</span></p>
+<p>y minimizar en <span class="math inline">\(\mu\)</span> es minimizar
+<span class="math inline">\(\sum_i(y_i-\mu_i)^2\)</span>. También estima
+la media condicional, pero la normal supone simetría y valores en todos
+los reales. Además, con salida sigmoide su gradiente se multiplica por
+<span class="math inline">\(\sigma&#39;(z)\)</span>, que es casi cero
+cuando la predicción está cerca de 1, justo donde está la LGD. La
+regresión beta (Ferrari y Cribari-Neto, 2004) tampoco sirve, porque la
+densidad beta no está definida en <span class="math inline">\(y =
+1\)</span>. El MSE queda disponible como opción
+(<code>--set red.perdida=mse</code>).</p>
+<h2 id="retropropagación">6.3 Retropropagación</h2>
+<p>Con <span class="math inline">\(\mathbf u^{(l)} = W^{(l)}\mathbf
+h^{(l-1)} + \mathbf b^{(l)}\)</span> y <span
+class="math inline">\(\boldsymbol\delta^{(l)} = \partial
+J/\partial\mathbf u^{(l)}\)</span>, la regla de la cadena da (Rumelhart
+et al., 1986):</p>
+<p><span class="math display">\[\delta^{(L+1)} = \hat\mu - y, \qquad
+\boldsymbol\delta^{(l)} =
+\left(W^{(l+1)\top}\boldsymbol\delta^{(l+1)}\right)\odot
+g&#39;\left(\mathbf u^{(l)}\right),\]</span></p>
+<p><span class="math display">\[\frac{\partial J}{\partial W^{(l)}} =
+\boldsymbol\delta^{(l)}\,\mathbf h^{(l-1)\top}, \qquad \frac{\partial
+J}{\partial\mathbf b^{(l)}} = \boldsymbol\delta^{(l)}.\]</span></p>
+<p>El error se calcula en la salida y se devuelve capa por capa,
+multiplicando por los pesos y por la derivada de la activación. En el
+código, PyTorch calcula esto automáticamente.</p>
+<h2 id="optimizadores">6.4 Optimizadores</h2>
+<p>Con mini-lotes y gradiente <span class="math inline">\(\mathbf g_t =
+\nabla_\theta J_B(\theta_t)\)</span>:</p>
+<p><strong>SGD con momento</strong> (<span class="math inline">\(\mu =
+0{,}9\)</span>): <span class="math inline">\(\mathbf v_t = \mu\mathbf
+v_{t-1} + \mathbf g_t\)</span> y <span
+class="math inline">\(\theta_{t+1} = \theta_t - \eta\,\mathbf
+v_t\)</span>.</p>
+<p><strong>Adam</strong> (Kingma y Ba, 2015):</p>
+<p><span class="math display">\[\mathbf m_t = \beta_1\mathbf m_{t-1} +
+(1-\beta_1)\mathbf g_t, \qquad \mathbf v_t = \beta_2\mathbf v_{t-1} +
+(1-\beta_2)\mathbf g_t^2,\]</span></p>
+<p><span class="math display">\[\hat{\mathbf m}_t = \frac{\mathbf
+m_t}{1-\beta_1^t}, \quad \hat{\mathbf v}_t = \frac{\mathbf
+v_t}{1-\beta_2^t}, \qquad \theta_{t+1} = \theta_t -
+\eta\,\frac{\hat{\mathbf m}_t}{\sqrt{\hat{\mathbf
+v}_t}+\epsilon},\]</span></p>
+<p>con <span class="math inline">\(\beta_1 = 0{,}9\)</span>, <span
+class="math inline">\(\beta_2 = 0{,}999\)</span> y <span
+class="math inline">\(\epsilon = 10^{-8}\)</span>.</p>
+<h2 id="regularización">6.5 Regularización</h2>
+<ol type="1">
+<li><strong>Penalización <span
+class="math inline">\(L_2\)</span></strong> (<code>weight_decay</code>):
+se minimiza <span class="math inline">\(J(\theta) +
+\frac\lambda2\|\theta\|^2\)</span>, lo que suma <span
+class="math inline">\(\lambda\theta\)</span> al gradiente y empuja los
+pesos hacia cero. En la logística el mismo papel lo cumple <span
+class="math inline">\(C = 1/\lambda\)</span>, y en la regresión lineal
+(Ridge) el parámetro <span class="math inline">\(\alpha\)</span>.</li>
+<li><strong>Dropout</strong> (Srivastava et al., 2014): en
+entrenamiento, cada neurona oculta se apaga con probabilidad <span
+class="math inline">\(q\)</span>, es decir, <span
+class="math inline">\(\tilde{\mathbf h} = \mathbf r\odot\mathbf
+h/(1-q)\)</span> con <span
+class="math inline">\(r_j\sim\text{Bernoulli}(1-q)\)</span>. Al predecir
+se usan todas las neuronas.</li>
+<li><strong>Parada temprana</strong>: después de cada época se calcula
+la pérdida en validación; si no mejora en un número fijo de épocas (6 en
+la PD, 15 en la LGD) se detiene el entrenamiento y se recuperan los
+pesos de la mejor época.</li>
+</ol>
+<h2 id="métricas">6.6 Métricas</h2>
+<p><strong>PD (discriminación y calibración):</strong></p>
+<ul>
+<li><strong>AUC</strong>: probabilidad de que un malo elegido al azar
+tenga mayor <span class="math inline">\(\hat\mu\)</span> que un bueno
+elegido al azar.</li>
+<li><strong>Gini</strong> <span class="math inline">\(= 2\,\text{AUC} -
+1\)</span>.</li>
+<li><strong>KS</strong> <span class="math inline">\(=
+\max_s|F_{\text{malos}}(s) - F_{\text{buenos}}(s)|\)</span>, la máxima
+separación entre las distribuciones acumuladas de malos y buenos.</li>
+<li><strong>Brier</strong> <span class="math inline">\(=
+\frac1n\sum_i(\hat\mu_i - y_i)^2\)</span>, y la <strong>curva de
+calibración</strong>: probabilidad predicha media frente a tasa
+observada en cada decil de predicción.</li>
+</ul>
+<p><strong>LGD:</strong></p>
+<ul>
+<li><span class="math inline">\(\text{MAE} = \frac1n\sum_i|y_i - \hat
+y_i|\)</span> y <span class="math inline">\(\text{RMSE} =
+\sqrt{\frac1n\sum_i(y_i-\hat y_i)^2}\)</span>.</li>
+<li><span class="math inline">\(R^2 = 1 - \sum_i(y_i - \hat y_i)^2 /
+\sum_i(y_i - \bar y)^2\)</span>.</li>
+<li>Para comparar distribuciones, la <strong>distancia de
+Wasserstein-1</strong> <span class="math inline">\(W_1 =
+\int_0^1|F^{-1}(u) - \hat F^{-1}(u)|\,du\)</span>, que es la diferencia
+promedio entre los cuantiles observados y predichos.</li>
+</ul>
+<h2 id="derivación-de-la-scorecard">6.7 Derivación de la scorecard</h2>
+<p>El puntaje es una función lineal del logaritmo de las <em>odds</em>
+de ser bueno (Siddiqi, 2006):</p>
+<p><span class="math display">\[\text{Puntaje} = \text{Offset} +
+\text{Factor}\cdot\ln\frac{1-p}{p}.\]</span></p>
+<p>Exigimos dos condiciones: que con odds de referencia <span
+class="math inline">\(o_0\)</span> el puntaje sea <span
+class="math inline">\(B\)</span>, y que cada <span
+class="math inline">\(PDO\)</span> puntos las odds se dupliquen:</p>
+<p><span class="math display">\[B = \text{Offset} + \text{Factor}\ln
+o_0, \qquad B + PDO = \text{Offset} +
+\text{Factor}\ln(2o_0).\]</span></p>
+<p>Restando, <span class="math inline">\(PDO = \text{Factor}\ln
+2\)</span>, así que</p>
+<p><span class="math display">\[\text{Factor} = \frac{PDO}{\ln 2},
+\qquad \text{Offset} = B - \text{Factor}\ln o_0.\]</span></p>
+<p>Usamos <span class="math inline">\(B = 600\)</span>, <span
+class="math inline">\(o_0 = 20\)</span> (20 buenos por cada malo, una PD
+de 4,8 %) y <span class="math inline">\(PDO = 20\)</span>. Todo se
+cambia desde <code>config/pd.yaml</code> o la línea de comandos
+(<code>--set scorecard.pdo=40</code>).</p>
+<p><strong>Puntos por variable en la logística.</strong> Como <span
+class="math inline">\(\ln\frac{1-p}{p} = -(\beta_0 +
+\sum_j\beta_jx_j)\)</span>,</p>
+<p><span class="math display">\[\text{Puntaje} =
+\underbrace{\text{Offset} - \text{Factor}\,\beta_0}_{\text{puntos base}
+= 550{,}2} + \sum_j\left(-\text{Factor}\,\beta_jx_j\right).\]</span></p>
+<p><strong>Puntos por variable en la red: gradientes
+integrados.</strong> En la red el logit no es una suma, así que usamos
+gradientes integrados (Sundararajan et al., 2017) con referencia en el
+cliente típico <span class="math inline">\(\mathbf x^0\)</span>
+(medianas y modas del entrenamiento):</p>
+<p><span class="math display">\[\text{IG}_j(\mathbf x) = (x_j -
+x_j^0)\int_0^1\frac{\partial z\left(\mathbf x^0 + \alpha(\mathbf x -
+\mathbf x^0)\right)}{\partial x_j}\,d\alpha.\]</span></p>
+<p>La integral se aproxima con 64 puntos. Por la propiedad de
+completitud, <span class="math inline">\(\sum_j\text{IG}_j(\mathbf x) =
+z(\mathbf x) - z(\mathbf x^0)\)</span>, de modo que</p>
+<p><span class="math display">\[\text{Puntaje}(\mathbf x) =
+\text{Puntaje}(\mathbf x^0) +
+\sum_j\left(-\text{Factor}\cdot\text{IG}_j(\mathbf
+x)\right).\]</span></p>
+<p>Si el modelo fuera la logística, <span
+class="math inline">\(\text{IG}_j = \beta_j(x_j - x_j^0)\)</span> y se
+recuperan sus puntos. Las columnas <em>one-hot</em> de una misma
+variable se suman. En 4 000 créditos de prueba el error de completitud
+fue como máximo 0,016 en el logit, menos de medio punto del puntaje.</p>
+<h1 id="parte-1-probabilidad-de-incumplimiento">7. Parte 1: probabilidad
+de incumplimiento</h1>
+<h2 id="modelo-de-referencia-regresión-logística">7.1 Modelo de
+referencia: regresión logística</h2>
+<p>Ajustamos una regresión logística con penalización <span
+class="math inline">\(L_2\)</span> y probamos <span
+class="math inline">\(C\in\{0{,}001;\ 0{,}01;\ 0{,}1;\ 1;\
+10\}\)</span>, eligiendo por AUC en validación. Las cinco dan
+prácticamente lo mismo (AUC de validación entre 0,7186 y 0,7189) y quedó
+<span class="math inline">\(C = 0{,}01\)</span>: 107 parámetros, 5
+configuraciones y unos 9 s en total. La Figura 5 muestra su calibración
+y la distribución de su puntaje. En validación el modelo predice en
+promedio 23,7 % y se observa 27,1 %: se queda corto por el cambio en la
+proporción de malos entre periodos.</p>
+<figure>
+<img src="reports/figures/fig05_logistica_calibracion_puntaje.png"
+alt="Figura 5. Regresión logística. Izquierda: curva de calibración por deciles en validación y prueba. Derecha: distribución del puntaje en prueba para buenos y malos. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 5.</strong> Regresión
+logística. Izquierda: curva de calibración por deciles en validación y
+prueba. Derecha: distribución del puntaje en prueba para buenos y malos.
+Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</figcaption>
+</figure>
+<p>Las variables con mayor rango de puntos en la scorecard logística son
+el ingreso anual, la tasa de interés, el monto, el número de cuentas
+abiertas y el DTI
+(<code>reports/tablas/scorecard_logistica_puntos.csv</code>).</p>
+<h2 id="red-neuronal-búsqueda-de-hiperparámetros">7.2 Red neuronal:
+búsqueda de hiperparámetros</h2>
+<p>Usamos <strong>búsqueda aleatoria</strong> de 30 configuraciones
+(Tabla 4). Bergstra y Bengio (2012) muestran que, con el mismo
+presupuesto, la búsqueda aleatoria explora mejor que una grilla cuando
+solo unos pocos hiperparámetros importan de verdad, porque no gasta
+intentos repitiendo los mismos valores de los que no importan. Cada
+configuración se entrena hasta 60 épocas con parada temprana y se elige
+la de mayor AUC en validación.</p>
+<p><strong>Tabla 4.</strong> Espacio de búsqueda de las redes (entre
+paréntesis, lo que cambia en la LGD).</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Hiperparámetro</th>
+<th>Valores</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Capas ocultas</td>
+<td>1, 2 o 3; cada capa con la mitad de neuronas que la anterior</td>
+</tr>
+<tr class="even">
+<td>Neuronas en la primera capa</td>
+<td>32, 64, 128, 256 (y 16 en la LGD)</td>
+</tr>
+<tr class="odd">
+<td>Activación</td>
+<td>ReLU, Leaky ReLU, tanh</td>
+</tr>
+<tr class="even">
+<td>Dropout</td>
+<td>0; 0,1; 0,2; 0,3; 0,5</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(L_2\)</span></td>
+<td>log-uniforme entre <span class="math inline">\(10^{-6}\)</span> y
+<span class="math inline">\(10^{-2}\)</span></td>
+</tr>
+<tr class="even">
+<td>Optimizador y tasa</td>
+<td>Adam (<span class="math inline">\(10^{-4}\)</span> a <span
+class="math inline">\(3\cdot10^{-3}\)</span>) o SGD con momento (<span
+class="math inline">\(10^{-3}\)</span> a <span
+class="math inline">\(5\cdot10^{-2}\)</span>), log-uniforme</td>
+</tr>
+<tr class="odd">
+<td>Tamaño de lote</td>
+<td>512, 1024, 2048 (128, 256, 512)</td>
+</tr>
+<tr class="even">
+<td>Épocas máximas / paciencia</td>
+<td>60 / 6 (200 / 15)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia (<code>config/pd_red.yaml</code> y
+<code>config/lgd.yaml</code>).</em></p>
+<p>La Figura 6 muestra el resultado: 29 de las 30 configuraciones quedan
+entre 0,716 y 0,726 de AUC sin importar si tienen 3 mil o 68 mil
+parámetros, y Adam queda en general por encima de SGD. Una configuración
+con SGD, tasa baja, dropout 0,5 y lotes de 2048 casi no aprendió (AUC
+0,546). La elegida tiene <strong>3 capas de 256, 128 y 64 neuronas,
+ReLU, dropout 0,3, <span class="math inline">\(L_2 =
+4{,}1\cdot10^{-5}\)</span>, Adam con tasa <span
+class="math inline">\(1{,}35\cdot10^{-3}\)</span> y lotes de
+1024</strong>: 68 609 parámetros.</p>
+<figure>
+<img src="reports/figures/fig06_busqueda_red.png"
+alt="Figura 6. AUC en validación de las 30 configuraciones de la búsqueda frente a su número de parámetros. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 6.</strong> AUC en
+validación de las 30 configuraciones de la búsqueda frente a su número
+de parámetros. Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</figcaption>
+</figure>
+<h2 id="resultados-con-30-semillas">7.3 Resultados con 30 semillas</h2>
+<p><strong>Tabla 5.</strong> Métricas de la PD. La logística es
+determinística y tiene un solo valor.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Conjunto</th>
+<th>Métrica</th>
+<th>Logística</th>
+<th>Red: media ± desv.</th>
+<th>Red: mejor</th>
+<th>Red: peor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Validación</td>
+<td>AUC</td>
+<td>0,7189</td>
+<td>0,7242 ± 0,0010</td>
+<td>0,7266</td>
+<td>0,7228</td>
+</tr>
+<tr class="even">
+<td>Validación</td>
+<td>Gini</td>
+<td>0,4377</td>
+<td>0,4484 ± 0,0020</td>
+<td>0,4531</td>
+<td>0,4455</td>
+</tr>
+<tr class="odd">
+<td>Validación</td>
+<td>KS</td>
+<td>0,3223</td>
+<td>0,3316 ± 0,0025</td>
+<td>0,3364</td>
+<td>0,3263</td>
+</tr>
+<tr class="even">
+<td>Validación</td>
+<td>Brier</td>
+<td>0,1757</td>
+<td>0,1738 ± 0,0002</td>
+<td>0,1733</td>
+<td>0,1743</td>
+</tr>
+<tr class="odd">
+<td>Prueba</td>
+<td>AUC</td>
+<td>0,6999</td>
+<td>0,7068 ± 0,0016</td>
+<td>0,7099</td>
+<td>0,7038</td>
+</tr>
+<tr class="even">
+<td>Prueba</td>
+<td>Gini</td>
+<td>0,3997</td>
+<td>0,4137 ± 0,0033</td>
+<td>0,4197</td>
+<td>0,4076</td>
+</tr>
+<tr class="odd">
+<td>Prueba</td>
+<td>KS</td>
+<td>0,2929</td>
+<td>0,3037 ± 0,0029</td>
+<td>0,3095</td>
+<td>0,2978</td>
+</tr>
+<tr class="even">
+<td>Prueba</td>
+<td>Brier</td>
+<td>0,1724</td>
+<td>0,1713 ± 0,0005</td>
+<td>0,1704</td>
+<td>0,1727</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club (Kaggle). En
+el Brier, “mejor” es el más bajo.</em></p>
+<p><strong>Tabla 6.</strong> Costo de cada familia de modelos en la
+PD.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Modelo</th>
+<th>Parámetros entrenables</th>
+<th>Configuraciones</th>
+<th>Tiempo total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regresión logística</td>
+<td>107</td>
+<td>5</td>
+<td>9 s</td>
+</tr>
+<tr class="even">
+<td>Red neuronal</td>
+<td>68 609</td>
+<td>30 de búsqueda + 30 semillas</td>
+<td>1 206 s</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia. Tiempos en un portátil de 2
+núcleos.</em></p>
+<p>Como se ve en la Tabla 5, la red gana en promedio 0,7 puntos de AUC
+en prueba y <strong>las 30 semillas le ganan a la logística</strong> (la
+peor da 0,7038 frente a 0,6999). La desviación entre semillas (0,0016)
+es menor que la diferencia. Pero la ganancia es pequeña frente al costo
+de la Tabla 6. En la Figura 7 las dos curvas de calibración quedan cerca
+de la diagonal en 2015: la red predice en promedio 25,9 % y se observa
+25,5 %. La curva de aprendizaje muestra la parada temprana: la pérdida
+de entrenamiento sigue bajando mientras la de validación ya no mejora.
+El modelo guardado para la aplicación es la semilla con mejor AUC en
+validación; su AUC es 0,726 en entrenamiento y 0,727 en validación, así
+que no hay sobreajuste fuerte.</p>
+<figure>
+<img src="reports/figures/fig07_red_vs_logistica.png"
+alt="Figura 7. Red frente a logística. Izquierda: calibración en prueba. Centro: AUC en prueba de las 30 semillas; la línea punteada es la logística. Derecha: curva de aprendizaje del modelo guardado. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 7.</strong> Red frente a
+logística. Izquierda: calibración en prueba. Centro: AUC en prueba de
+las 30 semillas; la línea punteada es la logística. Derecha: curva de
+aprendizaje del modelo guardado. Fuente: elaboración propia con datos de
+Lending Club (Kaggle).</figcaption>
+</figure>
+<h2 id="variables-de-riesgo-y-confirmación-de-hipótesis">7.4 Variables
+de riesgo y confirmación de hipótesis</h2>
+<p>Usamos dos métodos de interpretabilidad que se complementan:</p>
+<ul>
+<li><strong>Importancia por permutación</strong> (Breiman, 2001): se
+desordena una variable en el conjunto de prueba y se mide cuánto cae el
+AUC. Dice cuánto depende el modelo de la variable, pero no en qué
+dirección.</li>
+<li><strong>Gradientes integrados</strong> (Sundararajan et al., 2017),
+los mismos de la scorecard (sección 6.7): los puntos que suma o resta
+cada variable frente al cliente típico. Estos sí dan la dirección.</li>
+</ul>
+<p>En la Figura 8, las dos variables más importantes en ambos modelos
+son el <strong>ingreso anual</strong> y la <strong>tasa de
+interés</strong>, seguidas del DTI, el número total de cuentas, el uso
+del cupo rotativo y el monto. El grado aporta poco cuando ya está la
+tasa de interés, porque dicen casi lo mismo.</p>
+<figure>
+<img src="reports/figures/fig08_importancia_permutacion.png"
+alt="Figura 8. Caída del AUC en prueba al permutar cada variable (las 15 más importantes según la red). Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 8.</strong> Caída del AUC
+en prueba al permutar cada variable (las 15 más importantes según la
+red). Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</figcaption>
+</figure>
+<figure>
+<img src="reports/figures/fig09_hipotesis_red.png"
+alt="Figura 9. Puntos medios de la scorecard de la red (gradientes integrados) por grupo de cada variable de las hipótesis, en 4 000 créditos de prueba. Naranja resta puntos (más riesgo); azul suma. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 9.</strong> Puntos medios
+de la scorecard de la red (gradientes integrados) por grupo de cada
+variable de las hipótesis, en 4 000 créditos de prueba. Naranja resta
+puntos (más riesgo); azul suma. Fuente: elaboración propia con datos de
+Lending Club (Kaggle).</figcaption>
+</figure>
+<p><strong>Tabla 7.</strong> Hipótesis: lo que mostró el descriptivo
+(cada variable sola) y lo que hace la red con todas las variables
+(Figura 9).</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Hipótesis</th>
+<th>Descriptivo</th>
+<th>Red neuronal</th>
+<th>Conclusión</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>H1</td>
+<td>Peor grado y mayor tasa de interés, más riesgo</td>
+<td>Grado A: 7 %; G: 47 %</td>
+<td>Tasa: de +16 a −9 puntos; segunda más importante</td>
+<td>Se confirma</td>
+</tr>
+<tr class="even">
+<td>H2</td>
+<td>60 meses es más riesgoso que 36</td>
+<td>35 % frente a 18 %</td>
+<td>60 meses resta 12 puntos</td>
+<td>Se confirma</td>
+</tr>
+<tr class="odd">
+<td>H3</td>
+<td>Más DTI, más riesgo</td>
+<td>16 % → 31 %</td>
+<td>De +7 a −6 puntos</td>
+<td>Se confirma</td>
+</tr>
+<tr class="even">
+<td>H4</td>
+<td>Menos ingreso, más riesgo</td>
+<td>27 % → 17 %</td>
+<td>De −13 a +10 puntos; la más importante</td>
+<td>Se confirma</td>
+</tr>
+<tr class="odd">
+<td>H5</td>
+<td>Más uso del cupo, más riesgo</td>
+<td>15 % → 27 %</td>
+<td>De +8 a −3 puntos</td>
+<td>Se confirma</td>
+</tr>
+<tr class="even">
+<td>H6</td>
+<td>Más consultas recientes, más riesgo</td>
+<td>20 % → 28 %</td>
+<td>De +2 a −3 puntos</td>
+<td>Se confirma, débil</td>
+</tr>
+<tr class="odd">
+<td>H7</td>
+<td>Moras y registros públicos, más riesgo</td>
+<td>Débil</td>
+<td>Moras: −4 y −8 puntos; registros: casi 0</td>
+<td>Solo para moras</td>
+</tr>
+<tr class="even">
+<td>H8</td>
+<td>Arriendo más riesgoso que hipoteca</td>
+<td>24 % frente a 20 %</td>
+<td>Arriendo resta 5 puntos</td>
+<td>Se confirma</td>
+</tr>
+<tr class="odd">
+<td>H9</td>
+<td>Negocio propio es el propósito más riesgoso</td>
+<td>32 %, el más alto</td>
+<td>Resta 14 puntos, el que más</td>
+<td>Se confirma</td>
+</tr>
+<tr class="even">
+<td>H10</td>
+<td>Más historia crediticia, menos riesgo</td>
+<td>Muy débil</td>
+<td>De −1 a +5 puntos</td>
+<td>Se confirma, débil</td>
+</tr>
+<tr class="odd">
+<td>H11</td>
+<td>Más antigüedad laboral, menos riesgo</td>
+<td>Plano</td>
+<td>Sin patrón</td>
+<td>No se confirma</td>
+</tr>
+<tr class="even">
+<td>H12</td>
+<td>Ingreso verificado, menos riesgo</td>
+<td>Al revés: 25 % frente a 17 %</td>
+<td>No verificado suma 2 puntos; importancia ≈ 0</td>
+<td>Se rechaza</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p>Dos casos para discutir. En <strong>H12</strong>, sin las demás
+variables “verificado” parecía más riesgoso; con ellas el efecto casi
+desaparece. Eso apoya la idea de que Lending Club verifica sobre todo a
+quienes ya eran más riesgosos por otras razones, aunque no encontramos
+una fuente que lo confirme. En <strong>H7</strong>, la regresión
+logística le daba un poco <em>más</em> puntaje a quien tuvo una mora
+reciente, lo que no tiene sentido de negocio; la red sí la castiga. Los
+registros públicos, que solos se asociaban con más riesgo, dentro del
+modelo ya no restan, posiblemente porque esa información ya está en
+<code>mths_since_last_record</code>.</p>
+<h1 id="parte-2-pérdida-dado-incumplimiento">8. Parte 2: pérdida dado
+incumplimiento</h1>
+<h2 id="variable-objetivo">8.1 Variable objetivo</h2>
+<p>Para cada crédito castigado definimos</p>
+<p><span class="math display">\[\text{EAD}_{obs} = \texttt{funded\_amnt}
+- \texttt{total\_rec\_prncp}, \qquad \text{LGD} = 1 -
+\frac{\texttt{recoveries} -
+\texttt{collection\_recovery\_fee}}{\text{EAD}_{obs}},\]</span></p>
+<p>recortada a <span class="math inline">\([0, 1]\)</span>. Según el
+diccionario, <code>funded_amnt</code> es “the total amount committed to
+that loan at that point in time” (lo que realmente se prestó, que puede
+ser menos de lo pedido); <code>total_rec_prncp</code> es “principal
+received to date” (el capital que alcanzó a pagar);
+<code>recoveries</code> es “post charge off gross recovery” y
+<code>collection_recovery_fee</code> es “post charge off collection fee”
+(lo que costó cobrar, que no le queda al prestamista). Así, el
+denominador es el capital expuesto al momento del castigo y el numerador
+es lo recuperado neto.</p>
+<p>Decisiones y por qué:</p>
+<ul>
+<li><strong>Solo créditos castigados</strong> (<em>Charged Off</em>).
+Los <code>Default</code> y <code>Late (31-120 days)</code> cuentan como
+malos en la PD, pero todavía no tienen recuperaciones, porque estas
+empiezan después del castigo.</li>
+<li><strong>Solo con último pago hasta diciembre de 2014.</strong> La
+Figura 10 (izquierda) muestra que, desde 2015, el porcentaje de
+castigados sin ninguna recuperación pasa de cerca del 30 % a más del 90
+%. No es que sean peores créditos: el cobro apenas empezaba cuando se
+generaron los datos.</li>
+<li>Originados desde septiembre de 2012, igual que la PD.</li>
+</ul>
+<p>Quedan <strong>16 253 créditos</strong>, con LGD media 0,904 y
+mediana 0,880. El <strong>31,5 % tiene LGD = 1</strong> (no se recuperó
+nada) y la mayoría del resto está entre 0,85 y 0,90 (Figura 10,
+derecha).</p>
+<figure>
+<img src="reports/figures/fig10_lgd_objetivo.png"
+alt="Figura 10. Izquierda: porcentaje de créditos castigados sin recuperaciones y LGD media por trimestre del último pago; la línea vertical es el corte. Derecha: distribución de la LGD en la base final. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 10.</strong> Izquierda:
+porcentaje de créditos castigados sin recuperaciones y LGD media por
+trimestre del último pago; la línea vertical es el corte. Derecha:
+distribución de la LGD en la base final. Fuente: elaboración propia con
+datos de Lending Club (Kaggle).</figcaption>
+</figure>
+<p><strong>Limitaciones.</strong> La LGD no cuenta los intereses
+cobrados antes del incumplimiento (<code>total_rec_int</code>), no
+descuenta el valor del dinero en el tiempo porque no tenemos la fecha de
+cada recuperación, y las recuperaciones de finales de 2014 tuvieron solo
+un año para completarse. Además, 38 créditos recuperaron más que la EAD
+(LGD negativa) y se recortaron a 0.</p>
+<h2 id="modelos">8.2 Modelos</h2>
+<p>Las entradas son las mismas variables de solicitud que la PD, porque
+el caso de uso es el mismo, con el mismo preprocesamiento ajustado sobre
+el entrenamiento de la LGD. El <strong>modelo de referencia</strong> es
+una regresión lineal con penalización (Ridge), con <span
+class="math inline">\(\alpha\in\{0{,}01;\ 0{,}1;\ 1;\ 10;\ 100;\
+1000\}\)</span> elegido por RMSE en validación (<span
+class="math inline">\(\alpha = 100\)</span>) y predicciones recortadas a
+<span class="math inline">\([0,1]\)</span>. La <strong>red</strong> usa
+salida sigmoide y entropía cruzada (sección 6.2) con la búsqueda de la
+Tabla 4, elegida por RMSE en validación: 2 capas de 256 y 128 neuronas,
+ReLU, dropout 0,1 y Adam, con 55 041 parámetros. Como referencia trivial
+agregamos predecir siempre la LGD media del entrenamiento.</p>
+<h2 id="resultados">8.3 Resultados</h2>
+<p><strong>Tabla 8.</strong> Métricas de la LGD.</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Conjunto</th>
+<th>Métrica</th>
+<th>Media de entrenamiento</th>
+<th>Regresión lineal</th>
+<th>Red: media ± desv.</th>
+<th>Red: mejor</th>
+<th>Red: peor</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Validación</td>
+<td>MAE</td>
+<td>0,0703</td>
+<td>0,0669</td>
+<td>0,0661 ± 0,0004</td>
+<td>0,0653</td>
+<td>0,0667</td>
+</tr>
+<tr class="even">
+<td>Validación</td>
+<td>RMSE</td>
+<td>0,0916</td>
+<td>0,0900</td>
+<td>0,0899 ± 0,0001</td>
+<td>0,0897</td>
+<td>0,0901</td>
+</tr>
+<tr class="odd">
+<td>Validación</td>
+<td><span class="math inline">\(R^2\)</span></td>
+<td>−0,000</td>
+<td>0,033</td>
+<td>0,036 ± 0,002</td>
+<td>0,039</td>
+<td>0,032</td>
+</tr>
+<tr class="even">
+<td>Prueba</td>
+<td>MAE</td>
+<td>0,0674</td>
+<td>0,0655</td>
+<td>0,0654 ± 0,0002</td>
+<td>0,0651</td>
+<td>0,0657</td>
+</tr>
+<tr class="odd">
+<td>Prueba</td>
+<td>RMSE</td>
+<td>0,0905</td>
+<td>0,0898</td>
+<td>0,0903 ± 0,0001</td>
+<td>0,0901</td>
+<td>0,0907</td>
+</tr>
+<tr class="even">
+<td>Prueba</td>
+<td><span class="math inline">\(R^2\)</span></td>
+<td>−0,007</td>
+<td>0,009</td>
+<td>−0,002 ± 0,003</td>
+<td>0,003</td>
+<td>−0,011</td>
+</tr>
+<tr class="odd">
+<td>Prueba</td>
+<td><span class="math inline">\(W_1\)</span></td>
+<td>0,0672</td>
+<td>0,0557</td>
+<td>0,0542 ± 0,0005</td>
+<td>0,0532</td>
+<td>0,0552</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p><strong>Tabla 9.</strong> Distribución observada y predicha de la LGD
+en prueba.</p>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+<col style="width: 12%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>p5</th>
+<th>p25</th>
+<th>p50</th>
+<th>p75</th>
+<th>p95</th>
+<th>Media</th>
+<th>Desv.</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Observada</td>
+<td>0,802</td>
+<td>0,859</td>
+<td>0,883</td>
+<td>1,000</td>
+<td>1,000</td>
+<td>0,910</td>
+<td>0,090</td>
+</tr>
+<tr class="even">
+<td>Regresión lineal</td>
+<td>0,879</td>
+<td>0,896</td>
+<td>0,906</td>
+<td>0,917</td>
+<td>0,931</td>
+<td>0,906</td>
+<td>0,016</td>
+</tr>
+<tr class="odd">
+<td>Red neuronal</td>
+<td>0,871</td>
+<td>0,892</td>
+<td>0,905</td>
+<td>0,916</td>
+<td>0,931</td>
+<td>0,903</td>
+<td>0,018</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p><strong>Tabla 10.</strong> Costo de cada familia de modelos en la
+LGD.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Modelo</th>
+<th>Parámetros entrenables</th>
+<th>Configuraciones</th>
+<th>Tiempo total</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regresión lineal</td>
+<td>86</td>
+<td>6</td>
+<td>0,03 s</td>
+</tr>
+<tr class="even">
+<td>Red neuronal</td>
+<td>55 041</td>
+<td>30 de búsqueda + 30 semillas</td>
+<td>349 s</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia.</em></p>
+<p>Según la Tabla 8, <strong>con los datos de la solicitud la LGD casi
+no se puede predecir</strong>: los modelos explican menos del 4 % de la
+varianza en validación y prácticamente nada en prueba, y el MAE baja
+apenas de 0,067 a 0,065 frente a predecir la media. <strong>La regresión
+lineal le gana a la red en RMSE de prueba</strong> frente a las 30
+semillas (la mejor da 0,0901 frente a 0,0898), empatan en MAE y la red
+solo gana un poco en <span class="math inline">\(W_1\)</span>. En la
+Figura 12 y la Tabla 9 se ve por qué: las predicciones de ambos modelos
+están muy concentradas (desviación de 0,018 frente a 0,090 observada) y
+ninguno predice LGD = 1. Si el modelo no logra distinguir, lo óptimo
+para el error cuadrático es predecir cerca de la media. La Figura 11
+muestra que ninguna de las 30 configuraciones se aleja mucho de la
+regresión lineal.</p>
+<figure>
+<img src="reports/figures/fig11_lgd_busqueda.png"
+alt="Figura 11. RMSE en validación de las 30 configuraciones de la red; la línea es la regresión lineal. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 11.</strong> RMSE en
+validación de las 30 configuraciones de la red; la línea es la regresión
+lineal. Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</figcaption>
+</figure>
+<figure>
+<img src="reports/figures/fig12_lgd_resultados.png"
+alt="Figura 12. Izquierda: distribución observada y predicha de la LGD en prueba. Centro: RMSE en prueba de las 30 semillas. Derecha: curva de aprendizaje del modelo guardado. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 12.</strong> Izquierda:
+distribución observada y predicha de la LGD en prueba. Centro: RMSE en
+prueba de las 30 semillas. Derecha: curva de aprendizaje del modelo
+guardado. Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</figcaption>
+</figure>
+<h2 id="pérdida-esperada">8.4 Pérdida esperada</h2>
+<p>Combinamos los modelos con <span class="math inline">\(E[L] = PD\cdot
+LGD\cdot EAD\)</span> (Basel Committee on Banking Supervision, 2006).
+Como <strong>EAD usamos el monto pedido</strong>
+(<code>loan_amnt</code>): es lo único que se conoce con seguridad el día
+de la solicitud y es un límite superior, porque en el peor caso la
+persona no paga ninguna cuota. En el entrenamiento de la LGD, al castigo
+quedaba expuesto en promedio el 74,8 % de lo desembolsado, así que
+dejamos como opción una EAD “ajustada” igual al monto por 0,748.</p>
+<p>Aplicamos los modelos a los 30 835 créditos de prueba de la PD (2015)
+y comparamos con una pérdida observada aproximada: para los malos, el
+capital no pagado menos lo recuperado neto; para los buenos, cero (Tabla
+11 y Figura 13).</p>
+<p><strong>Tabla 11.</strong> Pérdida esperada en los créditos de prueba
+(2015), como porcentaje del monto prestado.</p>
+<table>
+<thead>
+<tr class="header">
+<th>Combinación</th>
+<th>PD media</th>
+<th>LGD media</th>
+<th>Pérdida / monto</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Red (PD) × Red (LGD)</td>
+<td>0,259</td>
+<td>0,907</td>
+<td>25,2 %</td>
+</tr>
+<tr class="even">
+<td>Logística (PD) × Lineal (LGD)</td>
+<td>0,240</td>
+<td>0,909</td>
+<td>23,3 %</td>
+</tr>
+<tr class="odd">
+<td>Observada (aproximada)</td>
+<td>0,255</td>
+<td>—</td>
+<td>24,4 %</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia con datos de Lending Club
+(Kaggle).</em></p>
+<p>A nivel de portafolio las dos combinaciones quedan cerca de lo
+observado, y por deciles la curva esperada sigue de cerca a la
+observada, del 5 % en el decil más bajo a cerca del 50 % en el más alto.
+Casi todo ese orden lo aporta la PD, porque la LGD es casi constante.
+Con la EAD ajustada la pérdida esperada baja a 18,9 % y queda por debajo
+de lo observado: los créditos que ya terminaron en 2015 son los que
+incumplieron muy rápido y casi no alcanzaron a pagar capital. Además, la
+pérdida observada de 2015 está sobreestimada, porque esos créditos casi
+no han tenido tiempo de recuperar (Figura 10).</p>
+<figure>
+<img src="reports/figures/fig13_perdida_esperada.png"
+alt="Figura 13. Pérdida esperada frente a observada en prueba (2015), por decil de pérdida esperada y por grado. Fuente: elaboración propia con datos de Lending Club (Kaggle)." />
+<figcaption aria-hidden="true"><strong>Figura 13.</strong> Pérdida
+esperada frente a observada en prueba (2015), por decil de pérdida
+esperada y por grado. Fuente: elaboración propia con datos de Lending
+Club (Kaggle).</figcaption>
+</figure>
+<h1 id="discusión">9. Discusión</h1>
+<p><strong>Tabla 12.</strong> Qué aportó la red neuronal en cada
+tarea.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>PD</th>
+<th>LGD</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Métricas en prueba</td>
+<td>Mejor: AUC 0,707 frente a 0,700; KS 0,304 frente a 0,293</td>
+<td>Igual o peor: RMSE 0,0903 frente a 0,0898</td>
+</tr>
+<tr class="even">
+<td>Variabilidad entre semillas</td>
+<td>Pequeña (desv. 0,0016 en AUC), menor que la ganancia</td>
+<td>Muy pequeña (desv. 0,0001 en RMSE)</td>
+</tr>
+<tr class="odd">
+<td>Costo</td>
+<td>640 veces más parámetros; ~130 veces más tiempo</td>
+<td>640 veces más parámetros; miles de veces más tiempo</td>
+</tr>
+<tr class="even">
+<td>Interpretabilidad</td>
+<td>Necesita gradientes integrados para dar puntos; la logística los da
+directo</td>
+<td>Igual; no se justifica el esfuerzo</td>
+</tr>
+<tr class="odd">
+<td>¿Vale la pena?</td>
+<td>Ganancia real pero pequeña; depende de si se traduce en dinero</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia a partir de las Tablas 5, 6, 8 y
+10.</em></p>
+<p>En la PD la red encontró algo que la logística no ve: es mejor en
+todas las semillas y castiga las moras pasadas como se esperaría, cosa
+que la logística no hacía (Tabla 7, H7). Pero la diferencia es menos de
+un punto de AUC. En la LGD no aportó nada, porque el problema no está en
+el modelo sino en la información: con datos de la solicitud no se puede
+saber cuánto se va a recuperar.</p>
+<p><strong>Lo que aprendimos del problema:</strong></p>
+<ol type="1">
+<li><strong>El caso de uso decide las variables.</strong> Definir que el
+modelo se usa el día de la solicitud dejó por fuera los pagos y las
+recuperaciones, que harían que cualquier modelo pareciera
+excelente.</li>
+<li><strong>El tiempo importa en los datos.</strong> Las variables de
+buró no existían antes de 2012, la tasa de malos de 2014–2015 está
+inflada por sesgo de selección y las recuperaciones de 2015 están
+incompletas. Cada una de estas cosas cambió una decisión.</li>
+<li><strong>Un faltante puede ser información.</strong> En
+<code>mths_since_last_delinq</code> el faltante significa “nunca ha
+estado en mora”.</li>
+<li><strong>Una variable sola puede engañar.</strong> El ingreso
+verificado parecía más riesgoso y los registros públicos parecían
+importar; con las demás variables, ambos efectos casi desaparecen.</li>
+<li><strong>En datos tabulares la red no siempre gana.</strong> Con 135
+mil créditos ganó poco en la PD; con 7 mil y poca señal, perdió en la
+LGD. La comparación solo es justa reportando presupuesto, semillas y
+parámetros.</li>
+<li><strong>La LGD de Lending Club es casi constante para el
+modelo.</strong> Tiene dos picos (1 y cerca de 0,87) y casi todo el
+orden de la pérdida esperada lo pone la PD.</li>
+<li><strong>Una buena calibración depende del periodo.</strong> La
+logística quedaba por debajo de la tasa observada en validación por el
+cambio de periodo, no por un error del modelo.</li>
+</ol>
+<h1 id="aplicación-web">10. Aplicación web</h1>
+<p>La aplicación <strong>¿Me prestas?</strong> (<a
+href="ENLACE-APP">enlace</a>) usa la red neuronal de la PD. La persona
+ingresa sus datos (monto, plazo, propósito, grado, ingreso, vivienda,
+DTI, uso del cupo, consultas, moras y años de historia crediticia) y
+obtiene:</p>
+<ul>
+<li>su puntaje en la scorecard, su probabilidad de incumplir y un nivel
+de riesgo;</li>
+<li>su percentil frente a los clientes de entrenamiento, con un
+histograma que la ubica;</li>
+<li>“¿Qué pasaría si…?”: cómo cambia su puntaje si cambia el monto, el
+plazo, el DTI u otra variable;</li>
+<li>“¿Qué te suma y qué te resta?”: los puntos de cada variable con
+gradientes integrados.</li>
+</ul>
+<p>Se levanta localmente con <code>streamlit run app/app.py</code>.</p>
+<h1 id="reproducibilidad">11. Reproducibilidad</h1>
+<p>Todo está en el <a
+href="https://github.com/Diego-Fernando-Juajibioy/RNA-y-Algo-Bioinsp_Trabajo2">repositorio</a>
+con versiones fijas en <code>requirements.txt</code>, semillas fijas en
+<code>config/</code>, los datos procesados en
+<code>data/processed/</code> y los modelos entrenados en
+<code>models/</code>. Cada experimento se lanza con un comando y sus
+parámetros se cambian con <code>--set clave=valor</code>:</p>
+<pre><code>python src/preparar_datos.py          # datos procesados desde loan.csv
+python src/descriptivo.py             # Figuras 1 a 4
+python src/pd_logistica.py            # regresión logística y scorecard (Figura 5)
+python src/pd_red.py --demo           # red de la PD, demostración en menos de 2 minutos
+python src/pd_red.py                  # experimento completo (~20 min)
+python src/interpretabilidad.py       # Figuras 8 y 9
+python src/lgd_objetivo.py            # variable objetivo de la LGD (Figura 10)
+python src/lgd_modelos.py --demo      # LGD, demostración
+python src/lgd_modelos.py             # experimento completo (~6 min)
+python src/perdida_esperada.py        # Figura 13
+streamlit run app/app.py              # aplicación</code></pre>
+<h1 id="uso-de-inteligencia-artificial">12. Uso de inteligencia
+artificial</h1>
+<p>Usamos Claude (Anthropic) durante todo el trabajo. El registro
+completo está en <code>docs/uso_ia.md</code>. Los prompts principales
+fueron estos (literales, con […] donde se recortó):</p>
+<p><strong>Tabla 13.</strong> Prompts principales y su resultado.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Etapa</th>
+<th>Prompt</th>
+<th>Qué produjo</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Inicio</td>
+<td>“ahora vamos con el segundo trabajo de la materia […] vamos a ir
+paso por paso pero dandome los archivos para hacer un seguimiento en git
+hub […]”</td>
+<td>Explicación del enunciado, estructura del repositorio y plan por
+pasos</td>
+</tr>
+<tr class="even">
+<td>Parte 1 completa</td>
+<td>“ha eso me refiero la idea es que el haga la parte dos pero yo
+ayudarle en el proceso, terminemos por completo la parte 1”</td>
+<td>Red neuronal de la PD, búsqueda, 30 semillas, interpretabilidad y su
+documentación</td>
+</tr>
+<tr class="odd">
+<td>Parte 2</td>
+<td>“sigamos con la parte dos, dame los archivos del punto dos para
+pasarselos a lenny”</td>
+<td>Variable objetivo de la LGD, modelos, pérdida esperada y su
+documentación</td>
+</tr>
+<tr class="even">
+<td>Reporte</td>
+<td>“si por favor” (respuesta a la oferta de armar el blog)</td>
+<td>Este reporte, a partir de los documentos de <code>docs/</code></td>
+</tr>
+</tbody>
+</table>
+<p><em>Fuente: elaboración propia.</em></p>
+<p><strong>Impacto en el resultado.</strong> La IA escribió la mayor
+parte del código y de los textos, y propuso varias decisiones de
+modelamiento (el corte de 2012, el indicador de “nunca”, la
+cuasi-verosimilitud para la LGD). Eso nos permitió llegar a un trabajo
+más completo de lo que habríamos hecho solos en el mismo tiempo. Pero
+también cometió errores que sonaban correctos (sección 13), y varios
+solo aparecieron al correr el código o al comparar los textos con los
+archivos de resultados. Lo que aprendimos es que todo número de un texto
+tiene que poder rastrearse a un archivo generado por el código, y que
+cada script hay que probarlo en un proceso nuevo, no solo en el que lo
+creó.</p>
+<h1 id="cacería-de-la-alucinación">13. Cacería de la alucinación</h1>
+<p>Documentamos seis errores reales de la IA durante el desarrollo, en
+cuatro categorías. Algunos los detectó la misma IA al volver a correr o
+revisar su trabajo; lo indicamos en cada caso. Para que la evidencia sea
+verificable, cada hallazgo apunta a un archivo o a un comando del
+repositorio.</p>
+<p><strong>Hallazgo 1. Código: una función que no se puede
+guardar.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> [COMPLETAR con el prompt literal del paso de la
+regresión logística].</li>
+<li><em>Respuesta:</em> el preprocesador usaba
+<code>FunctionTransformer</code> con una función <code>lambda</code>
+para el indicador de faltantes.</li>
+<li><em>Cómo se sospechó:</em> al guardar el modelo con
+<code>joblib</code> el programa falló.</li>
+<li><em>Evidencia:</em> <code>pickle</code>, que usa
+<code>joblib</code>, solo guarda funciones definidas con nombre en un
+módulo; una <code>lambda</code> no se puede serializar y lanza un
+error.</li>
+<li><em>Corrección:</em> funciones con nombre en
+<code>src/comun.py</code> (<code>es_faltante</code>,
+<code>nombres_nunca</code>).</li>
+<li><em>Lección:</em> guardar y volver a cargar el modelo apenas se
+crea, no al final.</li>
+</ol>
+<p><strong>Hallazgo 2. Código: un modelo que solo se podía cargar desde
+el script que lo creó.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> “sigamos con la parte dos, dame los archivos del
+punto dos para pasarselos a lenny”.</li>
+<li><em>Respuesta:</em> la clase <code>LinealRecortado</code>, que
+envuelve la regresión lineal de la LGD, estaba definida dentro de
+<code>src/lgd_modelos.py</code>, el script que se ejecuta.</li>
+<li><em>Cómo se sospechó:</em> la IA lo detectó al correr
+<code>src/perdida_esperada.py</code>, que carga ese modelo.</li>
+<li><em>Evidencia:</em>
+<code>AttributeError: Can't get attribute 'LinealRecortado' on &lt;module '__main__'&gt;</code>.
+Pickle guarda la clase como <code>__main__.LinealRecortado</code>, que
+no existe cuando el programa principal es otro.</li>
+<li><em>Corrección:</em> mover la clase a <code>src/comun.py</code> y
+reentrenar.</li>
+<li><em>Lección:</em> probar cada modelo guardado desde un script
+distinto al que lo entrenó.</li>
+</ol>
+<p><strong>Hallazgo 3. Código desactualizado: un parámetro obsoleto de
+Streamlit.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> [COMPLETAR con el prompt literal de la aplicación
+web].</li>
+<li><em>Respuesta:</em> algunos elementos de la aplicación usaban
+<code>use_container_width=True</code>.</li>
+<li><em>Cómo se sospechó:</em> al correr la aplicación con Streamlit
+1.66 aparecía un aviso de que el parámetro está obsoleto.</li>
+<li><em>Evidencia:</em> el aviso de Streamlit indica reemplazarlo por
+<code>width="stretch"</code>.</li>
+<li><em>Corrección:</em> <code>width="stretch"</code> en
+<code>app/app.py</code>.</li>
+<li><em>Lección:</em> la IA puede proponer código de versiones
+anteriores de una librería; hay que leer los avisos con las versiones
+fijadas en <code>requirements.txt</code>.</li>
+</ol>
+<p><strong>Hallazgo 4. Matemáticas: puntos base de la scorecard
+desactualizados.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> “ha eso me refiero la idea es que el haga la parte
+dos pero yo ayudarle en el proceso, terminemos por completo la parte
+1”.</li>
+<li><em>Respuesta:</em> la IA cambió la logística para probar 5 valores
+de <span class="math inline">\(C\)</span> (quedó <span
+class="math inline">\(C = 0{,}01\)</span>), pero el documento del modelo
+de referencia seguía diciendo que se ajustó “una sola vez” con <span
+class="math inline">\(C = 1\)</span> y que los puntos base eran
+527,3.</li>
+<li><em>Cómo se sospechó:</em> la IA lo detectó al revisar el documento
+contra los resultados nuevos.</li>
+<li><em>Evidencia:</em> los puntos base son <span
+class="math inline">\(\text{Offset} - \text{Factor}\,\beta_0\)</span> y
+<span class="math inline">\(\beta_0\)</span> cambia con <span
+class="math inline">\(C\)</span>;
+<code>reports/tablas/metricas_pd_logistica.json</code> da
+<code>"puntos_base": 550.22</code>.</li>
+<li><em>Corrección:</em> 550,2 y la descripción de la búsqueda de <span
+class="math inline">\(C\)</span> en
+<code>docs/04_modelo_referencia.md</code> y en la sección 6.7.</li>
+<li><em>Lección:</em> volver a revisar los textos cada vez que se
+reentrena un modelo.</li>
+</ol>
+<p><strong>Hallazgo 5. Datos: una proporción atribuida al conjunto
+equivocado.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> “sigamos con la parte dos, dame los archivos del
+punto dos para pasarselos a lenny”.</li>
+<li><em>Respuesta:</em> “En la base de la LGD, al momento del castigo
+quedaba expuesto en promedio el 75 % de lo desembolsado”.</li>
+<li><em>Cómo se sospechó:</em> la IA lo detectó al escribir este
+reporte, comparando con <code>reports/resumen_lgd.txt</code>, que dice
+0,811 para toda la base.</li>
+<li><em>Evidencia:</em> el 0,748 es solo el conjunto de entrenamiento
+(2012-09 a 2013-06). Por año de originación la proporción es 0,714
+(2012), 0,800 (2013) y 0,910 (2014): los créditos recientes de la base
+incumplieron más rápido y pagaron menos capital.</li>
+<li><em>Corrección:</em> <code>docs/06_lgd.md</code> y la sección 8.4
+dicen 74,8 % en entrenamiento y 81,1 % en toda la base.</li>
+<li><em>Lección:</em> todo número tiene que decir a qué subconjunto de
+datos corresponde.</li>
+</ol>
+<p><strong>Hallazgo 6. Conceptos: el costo de cómputo de la red mal
+dimensionado.</strong></p>
+<ol type="1">
+<li><em>Prompt:</em> “sigamos con la parte dos, dame los archivos del
+punto dos para pasarselos a lenny” (y, para el README, el prompt de la
+Parte 1 del hallazgo 4).</li>
+<li><em>Respuesta:</em> que la red de la LGD tomaba “8 000 veces más
+tiempo” que la regresión lineal, y que el experimento completo de la PD
+tardaba “cerca de una hora”.</li>
+<li><em>Cómo se sospechó:</em> la IA lo detectó al comparar con los
+tiempos guardados en <code>costo_lgd.csv</code> y en la salida de
+<code>src/pd_red.py</code>.</li>
+<li><em>Evidencia:</em> 349 s / 0,03 s ≈ 11 600 veces, y 1 206 s ≈ 20
+minutos.</li>
+<li><em>Corrección:</em> “miles de veces” en la LGD y “unos 20 minutos”
+en el README.</li>
+<li><em>Lección:</em> las afirmaciones sobre el costo de una red frente
+a un modelo simple también hay que calcularlas, no estimarlas.</li>
+</ol>
+<p><strong>Verificaciones sin error encontrado.</strong> Comprobamos que
+existen todas las referencias de la sección 14. También comparamos las
+columnas de <code>loan.csv</code> contra el diccionario: el diccionario
+llama <code>is_inc_v</code> a lo que en el archivo es
+<code>verification_status</code>, y describe
+<code>fico_range_low/high</code>, que no vienen en el archivo.</p>
+<h1 id="referencias">14. Referencias</h1>
+<p>Basel Committee on Banking Supervision. (2006). <em>International
+convergence of capital measurement and capital standards: A revised
+framework (Comprehensive version)</em>. Bank for International
+Settlements. https://www.bis.org/publ/bcbs128.htm</p>
+<p>Bergstra, J., &amp; Bengio, Y. (2012). Random search for
+hyper-parameter optimization. <em>Journal of Machine Learning Research,
+13</em>, 281–305.</p>
+<p>Breiman, L. (2001). Random forests. <em>Machine Learning, 45</em>(1),
+5–32. https://doi.org/10.1023/A:1010933404324</p>
+<p>Ferrari, S. L. P., &amp; Cribari-Neto, F. (2004). Beta regression for
+modelling rates and proportions. <em>Journal of Applied Statistics,
+31</em>(7), 799–815. https://doi.org/10.1080/0266476042000214501</p>
+<p>Kingma, D. P., &amp; Ba, J. (2015). Adam: A method for stochastic
+optimization. En <em>3rd International Conference on Learning
+Representations (ICLR)</em>. https://arxiv.org/abs/1412.6980</p>
+<p>Papke, L. E., &amp; Wooldridge, J. M. (1996). Econometric methods for
+fractional response variables with an application to 401(k) plan
+participation rates. <em>Journal of Applied Econometrics, 11</em>(6),
+619–632.</p>
+<p>Ranadeep. (s. f.). <em>Credit risk analysis</em> [Conjunto de datos].
+Kaggle. Recuperado el 26 de octubre de 2026 de
+https://www.kaggle.com/datasets/ranadeep/credit-risk-dataset</p>
+<p>Rumelhart, D. E., Hinton, G. E., &amp; Williams, R. J. (1986).
+Learning representations by back-propagating errors. <em>Nature,
+323</em>(6088), 533–536. https://doi.org/10.1038/323533a0</p>
+<p>Siddiqi, N. (2006). <em>Credit risk scorecards: Developing and
+implementing intelligent credit scoring</em>. John Wiley &amp; Sons.</p>
+<p>Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., &amp;
+Salakhutdinov, R. (2014). Dropout: A simple way to prevent neural
+networks from overfitting. <em>Journal of Machine Learning Research,
+15</em>(56), 1929–1958.</p>
+<p>Sundararajan, M., Taly, A., &amp; Yan, Q. (2017). Axiomatic
+attribution for deep networks. En <em>Proceedings of the 34th
+International Conference on Machine Learning</em> (Vol. 70,
+pp. 3319–3328). PMLR.</p>
+</body>
+</html>
