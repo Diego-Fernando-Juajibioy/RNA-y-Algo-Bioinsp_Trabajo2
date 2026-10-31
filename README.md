@@ -96,6 +96,23 @@ Importancia por permutación de cada variable para la logística y la red (Figur
 scorecard de la red con gradientes integrados agrupados por cada variable de las hipótesis
 (Figura 9). Necesita que existan los dos modelos de los pasos 3 y 4.
 
+## Parte 2: LGD y pérdida esperada
+
+```bash
+python src/lgd_objetivo.py                  # variable objetivo -> data/processed/creditos_lgd.csv.gz
+python src/lgd_modelos.py --demo            # prueba rápida, menos de 2 minutos
+python src/lgd_modelos.py                   # regresión lineal + 30 redes + 30 semillas (~6 min)
+python src/lgd_modelos.py --set red.perdida=mse
+python src/perdida_esperada.py              # E[L] = PD · LGD · EAD en los créditos de prueba
+python src/perdida_esperada.py --set perdida_esperada.ead=ajustada
+```
+
+La LGD se construye con los créditos castigados (Charged Off) que tuvieron al menos un año para
+recuperar. Modelos: regresión lineal (Ridge) y perceptrón multicapa con salida sigmoide y entropía
+cruzada. Guarda `models/lgd_lineal.joblib` y `models/lgd_red.joblib`, las tablas en
+`reports/tablas/` y las Figuras 10 a 13. Parámetros en `config/lgd.yaml`. Teoría y resultados en
+`docs/06_lgd.md`.
+
 ## Aplicación web
 
 ```bash
