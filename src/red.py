@@ -33,13 +33,23 @@ def crear_optimizador(modelo, hp):
     return torch.optim.SGD(modelo.parameters(), lr=hp["lr"], momentum=0.9, weight_decay=hp["l2"])
 
 
-def perdida_bce(modelo, X, y, tam=8192):
+def bce(z, y, reduction="mean"):
+    return nn.functional.binary_cross_entropy_with_logits(z, y, reduction=reduction)
+
+
+def mse(z, y, reduction="mean"):
+    return nn.functional.mse_loss(torch.sigmoid(z), y, reduction=reduction)
+
+
+PERDIDAS = {"bce": bce, "mse": mse}
+
+
+def perdida_promedio(modelo, X, y, f=bce, tam=8192):
     modelo.eval()
-    f = nn.BCEWithLogitsLoss(reduction="sum")
     total = 0.0
     with torch.no_grad():
         for i in range(0, len(X), tam):
-            total += f(modelo(X[i:i + tam]), y[i:i + tam]).item()
+            total += f(modelo(X[i:i + tam]), y[i:i + tam], reduction="sum").item()
     return total / len(X)
 
 
@@ -51,7 +61,7 @@ def entrenar(X_tr, y_tr, X_va, y_va, hp, semilla, max_epocas, paciencia):
     X_va, y_va = torch.tensor(np.asarray(X_va), dtype=torch.float32), torch.tensor(np.asarray(y_va), dtype=torch.float32)
     modelo = MLP(X_tr.shape[1], hp["capas"], hp["activacion"], hp["dropout"])
     opt = crear_optimizador(modelo, hp)
-    f = nn.BCEWithLogitsLoss()
+    f = PERDIDAS[hp.get("perdida", "bce")]
     historia, mejor, mejor_estado, sin_mejora = [], np.inf, None, 0
     t0 = time.time()
     for epoca in range(1, max_epocas + 1):
@@ -63,7 +73,7 @@ def entrenar(X_tr, y_tr, X_va, y_va, hp, semilla, max_epocas, paciencia):
             perdida = f(modelo(X_tr[idx]), y_tr[idx])
             perdida.backward()
             opt.step()
-        p_tr, p_va = perdida_bce(modelo, X_tr, y_tr), perdida_bce(modelo, X_va, y_va)
+        p_tr, p_va = perdida_promedio(modelo, X_tr, y_tr, f), perdida_promedio(modelo, X_va, y_va, f)
         historia.append((epoca, p_tr, p_va))
         if p_va < mejor - 1e-5:
             mejor, sin_mejora = p_va, 0
@@ -98,6 +108,9 @@ class ModeloRed:
     def logit(self, X):
         with torch.no_grad():
             return self.red()(torch.as_tensor(np.asarray(X), dtype=torch.float32)).numpy()
+
+    def predecir(self, X):
+        return 1 / (1 + np.exp(-self.logit(X)))
 
     def predict_proba(self, X):
         p = 1 / (1 + np.exp(-self.logit(X)))

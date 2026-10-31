@@ -1,0 +1,25 @@
+conjunto,metrica,modelo,media,desv,mejor,peor
+validacion,MAE,Media de entrenamiento,0.0703,0.0000,0.0703,0.0703
+validacion,MAE,Regresión lineal,0.0669,0.0000,0.0669,0.0669
+validacion,MAE,Red neuronal,0.0661,0.0004,0.0653,0.0670
+validacion,RMSE,Media de entrenamiento,0.0916,0.0000,0.0916,0.0916
+validacion,RMSE,Regresión lineal,0.0900,0.0000,0.0900,0.0900
+validacion,RMSE,Red neuronal,0.0899,0.0001,0.0898,0.0901
+validacion,R2,Media de entrenamiento,-0.0005,0.0000,-0.0005,-0.0005
+validacion,R2,Regresión lineal,0.0330,0.0000,0.0330,0.0330
+validacion,R2,Red neuronal,0.0362,0.0017,0.0385,0.0321
+validacion,W1,Media de entrenamiento,0.0701,0.0000,0.0701,0.0701
+validacion,W1,Regresión lineal,0.0590,0.0000,0.0590,0.0590
+validacion,W1,Red neuronal,0.0571,0.0006,0.0555,0.0583
+prueba,MAE,Media de entrenamiento,0.0674,0.0000,0.0674,0.0674
+prueba,MAE,Regresión lineal,0.0655,0.0000,0.0655,0.0655
+prueba,MAE,Red neuronal,0.0654,0.0002,0.0651,0.0657
+prueba,RMSE,Media de entrenamiento,0.0905,0.0000,0.0905,0.0905
+prueba,RMSE,Regresión lineal,0.0898,0.0000,0.0898,0.0898
+prueba,RMSE,Red neuronal,0.0903,0.0002,0.0900,0.0907
+prueba,R2,Media de entrenamiento,-0.0065,0.0000,-0.0065,-0.0065
+prueba,R2,Regresión lineal,0.0092,0.0000,0.0092,0.0092
+prueba,R2,Red neuronal,-0.0015,0.0034,0.0051,-0.0108
+prueba,W1,Media de entrenamiento,0.0672,0.0000,0.0672,0.0672
+prueba,W1,Regresión lineal,0.0557,0.0000,0.0557,0.0557
+prueba,W1,Red neuronal,0.0543,0.0005,0.0532,0.0552

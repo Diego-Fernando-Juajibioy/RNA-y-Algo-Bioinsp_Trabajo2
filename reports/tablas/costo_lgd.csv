@@ -1,0 +1,3 @@
+modelo,parametros,configuraciones,segundos_totales
+Regresión lineal,86,6,0.02
+Red neuronal,55041,30,180.0

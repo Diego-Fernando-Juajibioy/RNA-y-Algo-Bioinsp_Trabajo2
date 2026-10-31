@@ -77,6 +77,14 @@ class Recorte:
         return np.asarray(nombres, dtype=object)
 
 
+class LinealRecortado:
+    def __init__(self, modelo):
+        self.modelo = modelo
+
+    def predecir(self, X):
+        return np.clip(self.modelo.predict(X), 0, 1)
+
+
 def construir_preprocesador(cfg, numericas, categoricas):
     con_log = [c for c in numericas if c in cfg["log1p"]]
     sin_log = [c for c in numericas if c not in cfg["log1p"]]

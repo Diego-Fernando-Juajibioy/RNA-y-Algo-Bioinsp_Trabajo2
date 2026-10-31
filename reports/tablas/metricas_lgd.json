@@ -1,0 +1,164 @@
+{
+  "alfa_elegido": 100.0,
+  "busqueda_alfa": [
+    {
+      "alfa": 0.01,
+      "RMSE_validacion": 0.09009
+    },
+    {
+      "alfa": 0.1,
+      "RMSE_validacion": 0.09009
+    },
+    {
+      "alfa": 1.0,
+      "RMSE_validacion": 0.09009
+    },
+    {
+      "alfa": 10.0,
+      "RMSE_validacion": 0.09007
+    },
+    {
+      "alfa": 100.0,
+      "RMSE_validacion": 0.09001
+    },
+    {
+      "alfa": 1000.0,
+      "RMSE_validacion": 0.09018
+    }
+  ],
+  "parametros_lineal": 86,
+  "segundos_lineal": 0.02,
+  "hp_red": {
+    "capas": [
+      256,
+      128
+    ],
+    "activacion": "relu",
+    "dropout": 0.1,
+    "l2": 0.0008322586377859103,
+    "optimizador": "adam",
+    "lr": 0.0002911842112094339,
+    "batch": 256,
+    "perdida": "bce"
+  },
+  "parametros_red": 55041,
+  "configuraciones_red": 30,
+  "segundos_busqueda": 82.8,
+  "segundos_semillas": 97.2,
+  "semilla_desplegada": 3050,
+  "media_entrenamiento": 0.9026563167572021,
+  "resumen_red": {
+    "MAE_validacion": {
+      "media": 0.06614,
+      "desv": 0.0004,
+      "mejor": 0.06525,
+      "peor": 0.06699
+    },
+    "RMSE_validacion": {
+      "media": 0.08986,
+      "desv": 8e-05,
+      "mejor": 0.08975,
+      "peor": 0.09005
+    },
+    "R2_validacion": {
+      "media": 0.0362,
+      "desv": 0.00174,
+      "mejor": 0.03853,
+      "peor": 0.03209
+    },
+    "W1_validacion": {
+      "media": 0.05711,
+      "desv": 0.00064,
+      "mejor": 0.05548,
+      "peor": 0.05828
+    },
+    "MAE_prueba": {
+      "media": 0.06538,
+      "desv": 0.00016,
+      "mejor": 0.06509,
+      "peor": 0.0657
+    },
+    "RMSE_prueba": {
+      "media": 0.0903,
+      "desv": 0.00015,
+      "mejor": 0.09001,
+      "peor": 0.09072
+    },
+    "R2_prueba": {
+      "media": -0.00147,
+      "desv": 0.00341,
+      "mejor": 0.00508,
+      "peor": -0.01078
+    },
+    "W1_prueba": {
+      "media": 0.05427,
+      "desv": 0.00052,
+      "mejor": 0.05316,
+      "peor": 0.05521
+    }
+  },
+  "lineal": {
+    "entrenamiento": {
+      "MAE": 0.06804775714750382,
+      "RMSE": 0.09307517458768402,
+      "R2": 0.027778249344762806,
+      "media_observada": 0.9026562822781838,
+      "media_predicha": 0.9026562899281434,
+      "desv_observada": 0.09439547866766651,
+      "desv_predicha": 0.0141952946096228,
+      "W1": 0.059555705137886106
+    },
+    "validacion": {
+      "MAE": 0.06691854453437798,
+      "RMSE": 0.09001044321700306,
+      "R2": 0.032955995331229615,
+      "media_observada": 0.9006017546947283,
+      "media_predicha": 0.9025834236302602,
+      "desv_observada": 0.09153133186628043,
+      "desv_predicha": 0.015133536891311025,
+      "W1": 0.058969020441696045
+    },
+    "prueba": {
+      "MAE": 0.06552582183012776,
+      "RMSE": 0.08981727139636186,
+      "R2": 0.009231147864202427,
+      "media_observada": 0.9099360762561796,
+      "media_predicha": 0.9059084839585855,
+      "desv_observada": 0.09023472204800358,
+      "desv_predicha": 0.0158982696945783,
+      "W1": 0.055710415901284664
+    }
+  },
+  "red_desplegada": {
+    "entrenamiento": {
+      "MAE": 0.06620148748012294,
+      "RMSE": 0.09145196579662222,
+      "R2": 0.06139318246461778,
+      "media_observada": 0.9026562822781838,
+      "media_predicha": 0.899707636211593,
+      "desv_observada": 0.09439547866766651,
+      "desv_predicha": 0.016684492548432153,
+      "W1": 0.05739422789687663
+    },
+    "validacion": {
+      "MAE": 0.06584012775731196,
+      "RMSE": 0.08975088904954147,
+      "R2": 0.03852509154414496,
+      "media_observada": 0.9006017546947283,
+      "media_predicha": 0.8997719383618742,
+      "desv_observada": 0.09153133186628043,
+      "desv_predicha": 0.01731680983420022,
+      "W1": 0.05676153393499553
+    },
+    "prueba": {
+      "MAE": 0.06545204742084626,
+      "RMSE": 0.09043980863062502,
+      "R2": -0.004550790197191956,
+      "media_observada": 0.9099360762561796,
+      "media_predicha": 0.9032149583685631,
+      "desv_observada": 0.09023472204800358,
+      "desv_predicha": 0.018001769271904767,
+      "W1": 0.05385804357055947
+    }
+  }
+}
