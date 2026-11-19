@@ -5,8 +5,7 @@ date: "Redes Neuronales y Algoritmos Bioinspirados · Universidad Nacional de Co
 lang: es
 ---
 
-**Enlaces:** [Repositorio](https://github.com/Diego-Fernando-Juajibioy/RNA-y-Algo-Bioinsp_Trabajo2) ·
-[Aplicación web](ENLACE-APP) · [Video promocional](ENLACE-VIDEO)
+**Enlaces:** [Repositorio](https://github.com/Diego-Fernando-Juajibioy/RNA-y-Algo-Bioinsp_Trabajo2)
 
 # 1. Introducción
 
@@ -611,7 +610,7 @@ la información: con datos de la solicitud no se puede saber cuánto se va a rec
 
 # 10. Aplicación web
 
-La aplicación **¿Me prestas?** ([enlace](ENLACE-APP)) usa la red neuronal de la PD. La persona
+La aplicación **¿Me prestas?** usa la red neuronal de la PD. La persona
 ingresa sus datos (monto, plazo, propósito, grado, ingreso, vivienda, DTI, uso del cupo, consultas,
 moras y años de historia crediticia) y obtiene:
 
