@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -23,8 +24,16 @@ def aplicar_cambios(cfg, cambios):
         partes = clave.split(".")
         for p in partes[:-1]:
             nodo = nodo.setdefault(p, {})
-        nodo[partes[-1]] = yaml.safe_load(valor)
+        nodo[partes[-1]] = como_texto_si_fecha(yaml.safe_load(valor))
     return cfg
+
+
+def como_texto_si_fecha(valor):
+    if isinstance(valor, list):
+        return [como_texto_si_fecha(v) for v in valor]
+    if isinstance(valor, dict):
+        return {k: como_texto_si_fecha(v) for k, v in valor.items()}
+    return valor.isoformat() if isinstance(valor, date) else valor
 
 
 def cargar_datos(cfg):

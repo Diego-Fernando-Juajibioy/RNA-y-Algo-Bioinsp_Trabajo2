@@ -12,3 +12,6 @@ data/raw/*.zip
 # cosas del sistema
 .DS_Store
 Thumbs.db
+
+# salidas del modo demo
+reports/tablas/*_demo.csv
